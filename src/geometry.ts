@@ -1,0 +1,86 @@
+import type { Connection } from '../shared/model';
+
+export type Point = { x: number; y: number };
+export const CENTER = { x: 460, y: 410 };
+export const NODE_RADIUS = 34;
+export function circleRadius(count: number) {
+  return Math.max(210, Math.min(278, 196 + count * 10), count * 19);
+}
+
+export function diagramBounds(count: number, legendCount = 0) {
+  const radius = circleRadius(count);
+  const halfWidth = Math.max(460, radius + 120);
+  const halfHeight = Math.max(410, radius + 95);
+  const legendHeight = Math.max(0, Math.ceil(legendCount / 4) - 1) * 20;
+  return {
+    x: CENTER.x - halfWidth,
+    y: CENTER.y - halfHeight,
+    width: halfWidth * 2,
+    height: halfHeight * 2 + legendHeight,
+    legendHeight,
+  };
+}
+
+export function circlePositions(ids: string[]): Map<string, Point> {
+  const radius = circleRadius(ids.length);
+  return new Map(
+    ids.map((id, index) => {
+      const angle = -Math.PI / 2 + (index / ids.length) * Math.PI * 2;
+      return [
+        id,
+        { x: CENTER.x + Math.cos(angle) * radius, y: CENTER.y + Math.sin(angle) * radius },
+      ];
+    }),
+  );
+}
+
+export function edgeGeometry(edge: Connection, edges: Connection[], positions: Map<string, Point>) {
+  const start = positions.get(edge.sourceId)!;
+  const end = positions.get(edge.targetId)!;
+  const pair = [edge.sourceId, edge.targetId].sort();
+  const parallel = edges.filter(
+    (e) => [e.sourceId, e.targetId].sort().join('|') === pair.join('|'),
+  );
+  const lane = parallel.findIndex((e) => e.id === edge.id) - (parallel.length - 1) / 2;
+  // Use a canonical orientation so reversed arrows occupy distinct lanes.
+  const orientation = edge.sourceId === pair[0] ? 1 : -1;
+  const dx = end.x - start.x,
+    dy = end.y - start.y;
+  const length = Math.hypot(dx, dy);
+  const nx = -dy / length,
+    ny = dx / length;
+  const bend = lane * 48 * orientation;
+  const control = { x: (start.x + end.x) / 2 + nx * bend, y: (start.y + end.y) / 2 + ny * bend };
+  const trimmed = (point: Point, toward: Point, radius: number) => {
+    const length = Math.hypot(toward.x - point.x, toward.y - point.y);
+    return {
+      x: point.x + ((toward.x - point.x) / length) * radius,
+      y: point.y + ((toward.y - point.y) / length) * radius,
+    };
+  };
+  const a = trimmed(start, control, NODE_RADIUS + 5);
+  const b = trimmed(end, control, NODE_RADIUS + (edge.directed ? 14 : 5));
+  return {
+    path: `M ${a.x} ${a.y} Q ${control.x} ${control.y} ${b.x} ${b.y}`,
+    label: {
+      x: a.x * 0.25 + control.x * 0.5 + b.x * 0.25,
+      y: a.y * 0.25 + control.y * 0.5 + b.y * 0.25,
+    },
+  };
+}
+
+export function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => [...part][0])
+    .join('')
+    .toLocaleUpperCase(getLocale());
+}
+
+export function truncate(value: string, limit = 22): string {
+  const chars = [...value];
+  return chars.length > limit ? chars.slice(0, limit - 1).join('') + '…' : value;
+}
+import { getLocale } from '../shared/i18n';
