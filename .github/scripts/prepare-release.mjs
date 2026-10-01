@@ -12,8 +12,8 @@ export function expectedAssets(version) {
     `Clubs-${version}-mac-x64.zip`,
     `Clubs-${version}-mac-arm64.dmg`,
     `Clubs-${version}-mac-arm64.zip`,
-    `Clubs-${version}-linux-x64.AppImage`,
-    `Clubs-${version}-linux-x64.deb`,
+    `Clubs-${version}-linux-x86_64.AppImage`,
+    `Clubs-${version}-linux-amd64.deb`,
   ].sort();
 }
 

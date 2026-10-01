@@ -24,7 +24,18 @@ async function assetFixture(t, releaseVersion = version) {
     assert.equal(path.dirname(directory), parent);
     await rm(directory, { recursive: true, force: true });
   });
-  for (const name of expectedAssets(releaseVersion)) {
+  // Use names emitted by electron-builder, independently of the validation list.
+  const builtAssets = [
+    `Clubs-${releaseVersion}-windows-setup.exe`,
+    `Clubs-${releaseVersion}-windows-portable.exe`,
+    `Clubs-${releaseVersion}-mac-x64.dmg`,
+    `Clubs-${releaseVersion}-mac-x64.zip`,
+    `Clubs-${releaseVersion}-mac-arm64.dmg`,
+    `Clubs-${releaseVersion}-mac-arm64.zip`,
+    `Clubs-${releaseVersion}-linux-x86_64.AppImage`,
+    `Clubs-${releaseVersion}-linux-amd64.deb`,
+  ];
+  for (const name of builtAssets) {
     await writeFile(path.join(directory, name), `test package: ${name}`);
   }
   return directory;
