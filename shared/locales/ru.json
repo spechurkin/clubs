@@ -120,6 +120,8 @@
   "counts.charactersSeparator": " персонажей · ",
   "counts.charactersWithValue": "{0} персонажей",
   "counts.circles": "кружков",
+  "counts.circlesFew": "кружка",
+  "counts.circlesOne": "кружок",
   "counts.connections": "связей",
   "counts.connectionsSeparator": "связей · ",
   "counts.connectionsSuffix": " связей",

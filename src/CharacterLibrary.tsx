@@ -1,4 +1,4 @@
-import { tr, getLocale } from '../shared/i18n';
+import { tr, getLocale, formatCircleCount } from '../shared/i18n';
 import { useEffect, useState } from 'react';
 import {
   ChevronDown,
@@ -314,12 +314,11 @@ export default function CharacterLibrary({
                     <p>{character.notes || tr('characters.defaultNotes')}</p>
                     <div className="card-bottom">
                       <span>
-                        {
+                        {formatCircleCount(
                           data.circles.filter((circle) =>
                             circle.characterIds.includes(character.id),
-                          ).length
-                        }{' '}
-                        {tr('counts.circles')}
+                          ).length,
+                        )}
                       </span>
                       <button
                         className="text-button"

@@ -120,6 +120,8 @@
   "counts.charactersSeparator": " characters · ",
   "counts.charactersWithValue": "{0} characters",
   "counts.circles": "circles",
+  "counts.circlesFew": "circles",
+  "counts.circlesOne": "circle",
   "counts.connections": "connections",
   "counts.connectionsSeparator": "connections · ",
   "counts.connectionsSuffix": " connections",

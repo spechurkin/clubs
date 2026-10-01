@@ -5,6 +5,7 @@ import { z } from 'zod';
 export type Locale = 'ru' | 'en';
 export type Message = keyof typeof english;
 const translations: Record<Locale, Record<Message, string>> = { en: english, ru: russian };
+const pluralRules = { en: new Intl.PluralRules('en'), ru: new Intl.PluralRules('ru') };
 let locale: Locale = 'en';
 z.config(z.locales.en());
 const listeners = new Set<() => void>();
@@ -28,4 +29,11 @@ export function subscribeLocale(listener: () => void) {
 export function tr(message: Message, ...parameters: unknown[]): string {
   const template = translations[locale][message];
   return template.replace(/\{(\d+)\}/g, (_, index: string) => String(parameters[Number(index)]));
+}
+
+export function formatCircleCount(count: number): string {
+  const form = pluralRules[locale].select(count);
+  const message =
+    form === 'one' ? 'counts.circlesOne' : form === 'few' ? 'counts.circlesFew' : 'counts.circles';
+  return `${count} ${tr(message)}`;
 }
