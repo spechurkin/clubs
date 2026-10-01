@@ -40,6 +40,7 @@ test('English default, live language switching, native dialog text and shared li
   expect(
     await app.evaluate(({ app }) => ({ name: app.getName(), version: app.getVersion() })),
   ).toEqual({ name: 'Clubs', version: packageMetadata.version });
+    await expect(page.locator('.version')).toHaveText(`v${packageMetadata.version}`);
 
   await page.getByRole('button', { name: 'Explore an example', exact: true }).click();
   await expect(page.locator('.save-status')).toHaveText('All changes saved');

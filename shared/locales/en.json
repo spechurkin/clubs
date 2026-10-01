@@ -244,7 +244,7 @@
   "help.characterStep": "Add characters to the library. Upload a portrait or choose a color.",
   "help.clubStep": "Create a club, choose its members and connect them through relationships.",
   "help.relationshipStep": "Create a relationship type and choose its line color.",
-  "help.shortcuts": "Use the arrows in the member list to change their order. Click “Connect on diagram” and select two characters. Ctrl/Cmd+S saves; Esc clears the selection.",
+  "help.shortcuts": "Use the arrows in the member list to change their order. Click “Connect on diagram” and select two characters. Scroll the diagram with the mouse wheel; Shift scrolls horizontally and Ctrl/Cmd zooms. Ctrl/Cmd+S saves; Esc clears the selection.",
   "help.title": "How clubs work",
   "inspector.connections": "Connections",
   "inspector.members": "Members",

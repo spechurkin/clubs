@@ -1,4 +1,5 @@
 import {getLocale, isLocale, setLocale, subscribeLocale, tr} from '../shared/i18n';
+import {version as appVersion} from '../package.json';
 import {type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore,} from 'react';
 import {
   ArrowDown,
@@ -108,6 +109,38 @@ export default function App() {
   const [labels, setLabels] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+    const attachDiagramWheel = useCallback((viewport: HTMLDivElement | null) => {
+        if (!viewport) return;
+        const wheel = (event: WheelEvent) => {
+            event.preventDefault();
+            const deltaX =
+                event.deltaX *
+                (event.deltaMode === WheelEvent.DOM_DELTA_LINE
+                    ? 16
+                    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+                        ? viewport.clientWidth
+                        : 1);
+            const deltaY =
+                event.deltaY *
+                (event.deltaMode === WheelEvent.DOM_DELTA_LINE
+                    ? 16
+                    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+                        ? viewport.clientHeight
+                        : 1);
+            if (event.ctrlKey || event.metaKey) {
+                setZoom((current) => Math.max(0.5, Math.min(2.5, current * Math.exp(-deltaY * 0.002))));
+                return;
+            }
+            const horizontal = event.shiftKey && deltaX === 0;
+            setPan((current) => ({
+                x: current.x - (horizontal ? deltaY : deltaX),
+                y: current.y - (horizontal ? 0 : deltaY),
+            }));
+        };
+        // Cancel native scrolling and browser zoom only over the diagram.
+        viewport.addEventListener('wheel', wheel, {passive: false});
+        return () => viewport.removeEventListener('wheel', wheel);
+    }, []);
   const [linking, setLinking] = useState(false);
   const [exportMenu, setExportMenu] = useState(false);
     const [clubMenu, setClubMenu] = useState(false);
@@ -448,7 +481,7 @@ export default function App() {
             <Settings2 size={21} />
             <span>{tr('navigation.settings')}</span>
           </button>
-          <span className="version">v1.0</span>
+            <span className="version">v{appVersion}</span>
         </div>
       </nav>
 
@@ -838,6 +871,7 @@ export default function App() {
                   </div>
                   <div
                     className="diagram-viewport"
+                    ref={attachDiagramWheel}
                     onPointerDown={(e) => {
                       if (
                         e.button !== 0 ||
@@ -908,8 +942,8 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label={tr('diagram.zoomIn')}
-                        onClick={() => setZoom((z) => Math.min(2, +(z + 0.1).toFixed(1)))}
-                        disabled={zoom >= 2}
+                        onClick={() => setZoom((z) => Math.min(2.5, +(z + 0.1).toFixed(1)))}
+                        disabled={zoom >= 2.5}
                       >
                         <ZoomIn size={17} />
                       </button>

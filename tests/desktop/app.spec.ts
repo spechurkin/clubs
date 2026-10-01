@@ -1154,6 +1154,61 @@ test('example diagram renders without network requests or errors', async () => {
   await saved();
   await expect(page.getByTestId('diagram').locator('.diagram-node')).toHaveCount(6);
   await expect(page.getByTestId('diagram').locator('.diagram-edge')).toHaveCount(7);
+    const viewport = page.locator('.diagram-viewport');
+    const transform = page.locator('.diagram-transform');
+    const center = page.getByRole('button', {name: russianText('diagram.center'), exact: true});
+    await viewport.hover({position: {x: 100, y: 180}});
+    await page.mouse.wheel(0, 120);
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, -120)');
+    await page.mouse.wheel(80, 0);
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -80, -120)');
+    await page.keyboard.down('Shift');
+    await page.mouse.wheel(0, 60);
+    await page.keyboard.up('Shift');
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -140, -120)');
+    await expect(page.locator('.zoom-controls > span')).toHaveText('100%');
+    await center.click();
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+
+    await viewport.hover({position: {x: 100, y: 180}});
+    await page.keyboard.down('Control');
+    await page.mouse.wheel(0, -120);
+    await expect(page.locator('.zoom-controls > span')).toHaveText('127%');
+    await page.mouse.wheel(0, -10000);
+    await expect(page.locator('.zoom-controls > span')).toHaveText('250%');
+    await expect(
+        page.getByRole('button', {name: russianText('diagram.zoomIn'), exact: true}),
+    ).toBeDisabled();
+    await page.mouse.wheel(0, 10000);
+    await expect(page.locator('.zoom-controls > span')).toHaveText('50%');
+    await expect(
+        page.getByRole('button', {name: russianText('diagram.zoomOut'), exact: true}),
+    ).toBeDisabled();
+    await page.keyboard.up('Control');
+    expect(
+        await app.evaluate(({BrowserWindow}) =>
+            BrowserWindow.getAllWindows()[0].webContents.getZoomFactor(),
+        ),
+    ).toBe(1);
+    await center.click();
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+
+    await page.locator('.inspector').hover();
+    await page.mouse.wheel(0, 120);
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+    await page.getByRole('button', {name: russianText('navigation.characters'), exact: true}).click();
+    await page.locator('.rail-button').filter({hasText: russianText('navigation.clubs')}).click();
+    await viewport.hover({position: {x: 100, y: 180}});
+    await page.mouse.wheel(0, 60);
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, -60)');
+    const viewportBounds = (await viewport.boundingBox())!;
+    await page.mouse.move(viewportBounds.x + 100, viewportBounds.y + 180);
+    await page.mouse.down();
+    await page.mouse.move(viewportBounds.x + 170, viewportBounds.y + 220);
+    await page.mouse.up();
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 70, -20)');
+    await center.click();
+    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
   await page
     .getByRole('button', {
       name: russianText(
