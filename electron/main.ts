@@ -1,30 +1,30 @@
-import { tr, getLocale, isLocale, setLocale } from '../shared/i18n';
+import {getLocale, isLocale, setLocale, tr} from '../shared/i18n';
 import {
   app,
   BrowserWindow,
   dialog,
   ipcMain,
+  type IpcMainInvokeEvent,
   Menu,
   net,
   protocol,
   session,
   shell,
-  type IpcMainInvokeEvent,
 } from 'electron';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { writeFile } from 'node:fs/promises';
-import { databaseSchema, type ExportFormat } from '../shared/model';
-import { describeImport, mergeTransfer, transferSchema } from '../shared/transfer';
-import { Repository } from './repository';
-import { prepareDataDirectory, type DataDirectory } from './data-directory';
-import { readLanguage, saveLanguage } from './preferences';
+import {pathToFileURL} from 'node:url';
+import {writeFile} from 'node:fs/promises';
+import {databaseSchema, type ExportFormat} from '../shared/model';
+import {describeImport, mergeTransfer, transferSchema} from '../shared/transfer';
+import {Repository} from './repository';
+import {type DataDirectory, prepareDataDirectory} from './data-directory';
+import {readLanguage, saveLanguage} from './preferences';
 
 app.setName(tr('app.name'));
 let dataDirectory: DataDirectory = { directory: path.join(app.getPath('appData'), 'Clubs') };
 let directoryError: Error | undefined;
 try {
-  dataDirectory = prepareDataDirectory(app.getPath('appData'), process.env.CIRCLE_DATA_DIR);
+    dataDirectory = prepareDataDirectory(app.getPath('appData'), process.env.CLUB_DATA_DIR);
 } catch (error) {
   directoryError = error as Error;
 }
@@ -34,12 +34,12 @@ if (!directoryError) {
   app.setName(tr('app.name'));
 }
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'circles', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+    {scheme: 'clubs', privileges: {standard: true, secure: true, supportFetchAPI: true}},
 ]);
 let mainWindow: BrowserWindow | null = null;
 let repository: Repository;
 let quitting = false;
-const developmentUrl = !app.isPackaged ? process.env.CIRCLE_DEV_URL : undefined;
+const developmentUrl = !app.isPackaged ? process.env.CLUB_DEV_URL : undefined;
 
 function authorize(event: IpcMainInvokeEvent) {
   const url = event.senderFrame?.url;
@@ -50,7 +50,7 @@ function authorize(event: IpcMainInvokeEvent) {
     !url ||
     (developmentUrl
       ? new URL(url).origin !== new URL(developmentUrl).origin
-      : !url.startsWith('circles://app/'))
+        : !url.startsWith('clubs://app/'))
   )
     throw new Error(tr('errors.unauthorizedRequest'));
 }
@@ -115,7 +115,7 @@ function registerHandlers() {
         'backup.replaceDetail',
         data.characters.length,
         data.folders.length,
-        data.circles.length,
+          data.clubs.length,
       ),
       buttons: [tr('actions.cancel'), tr('actions.replace')],
       defaultId: 0,
@@ -226,7 +226,7 @@ async function createWindow() {
     mainWindow = null;
   });
   mainWindow.once('ready-to-show', () => mainWindow?.show());
-  await mainWindow.loadURL(developmentUrl || 'circles://app/index.html');
+    await mainWindow.loadURL(developmentUrl || 'clubs://app/index.html');
 }
 
 if (directoryError) {
@@ -243,7 +243,7 @@ else {
     .then(async () => {
       repository = new Repository(app.getPath('userData'));
       const root = path.join(app.getAppPath(), 'dist');
-      protocol.handle('circles', (request) => {
+        protocol.handle('clubs', (request) => {
         const url = new URL(request.url);
         const file = path.resolve(root, '.' + decodeURIComponent(url.pathname));
         if (url.hostname !== 'app' || !file.startsWith(root + path.sep))

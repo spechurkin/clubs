@@ -1,8 +1,8 @@
-import { tr } from './i18n';
-import type { Locale } from './i18n';
-import { z } from 'zod';
-import type { TransferPackage, TransferImportResult } from './transfer';
-import { folderSubtree } from './folders';
+import type {Locale} from './i18n';
+import {tr} from './i18n';
+import {z} from 'zod';
+import type {TransferImportResult, TransferPackage} from './transfer';
+import {folderSubtree} from './folders';
 
 export const COLORS = [
   '#80c7b7',
@@ -64,7 +64,7 @@ export const connectionSchema = z
     notes: z.string().max(2000),
   })
   .strict();
-export const circleSchema = z
+export const clubSchema = z
   .object({
     id,
     name,
@@ -75,12 +75,12 @@ export const circleSchema = z
   .strict();
 const currentDatabaseSchema = z
   .object({
-    version: z.literal(3),
+      version: z.literal(4),
     characters: z.array(characterSchema).max(5000),
     folders: z.array(characterFolderSchema).max(500),
     relationTypes: z.array(relationTypeSchema).max(200),
-    circles: z.array(circleSchema).max(500),
-    activeCircleId: id.nullable(),
+      clubs: z.array(clubSchema).max(500),
+      activeClubId: id.nullable(),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -90,7 +90,7 @@ const currentDatabaseSchema = z
       !unique(data.characters.map((c) => c.id)) ||
       !unique(data.folders.map((folder) => folder.id)) ||
       !unique(data.relationTypes.map((t) => t.id)) ||
-      !unique(data.circles.map((c) => c.id))
+        !unique(data.clubs.map((c) => c.id))
     )
       issue(tr('validation.duplicateIds'));
     const characters = new Set(data.characters.map((c) => c.id));
@@ -125,16 +125,15 @@ const currentDatabaseSchema = z
       }
     }
     const types = new Set(data.relationTypes.map((t) => t.id));
-    if (data.activeCircleId && !data.circles.some((c) => c.id === data.activeCircleId))
-      issue(tr('validation.activeCircleMissing'));
-    for (const circle of data.circles) {
-      const members = new Set(circle.characterIds);
-      if (!unique(circle.characterIds) || circle.characterIds.some((c) => !characters.has(c)))
-        issue(tr('validation.circleMembersInvalid'));
-      if (!unique(circle.connections.map((c) => c.id)))
-        issue(tr('validation.duplicateConnections'));
+      if (data.activeClubId && !data.clubs.some((c) => c.id === data.activeClubId))
+          issue(tr('validation.activeClubMissing'));
+      for (const club of data.clubs) {
+          const members = new Set(club.characterIds);
+          if (!unique(club.characterIds) || club.characterIds.some((c) => !characters.has(c)))
+              issue(tr('validation.clubMembersInvalid'));
+          if (!unique(club.connections.map((c) => c.id))) issue(tr('validation.duplicateConnections'));
       const signatures = new Set<string>();
-      for (const connection of circle.connections) {
+          for (const connection of club.connections) {
         if (
           !members.has(connection.sourceId) ||
           !members.has(connection.targetId) ||
@@ -152,20 +151,29 @@ const currentDatabaseSchema = z
     }
   });
 
-// Migrate original and flat-folder libraries in every load/import path.
+// Normalize previous library formats in every load/import path.
 export const databaseSchema = z.preprocess((input) => {
   if (
-    typeof input === 'object' &&
-    input !== null &&
-    'version' in input &&
-    input.version === 1 &&
-    !('folders' in input)
-  ) {
-    return { ...input, version: 3, folders: [] };
-  }
-  if (typeof input === 'object' && input !== null && 'version' in input && input.version === 2)
-    return { ...input, version: 3 };
-  return input;
+      typeof input !== 'object' ||
+      input === null ||
+      !('version' in input) ||
+      ![1, 2, 3].includes(input.version as number) ||
+      (input.version === 1 && 'folders' in input)
+  )
+      return input;
+    const previous = input as Record<string, unknown>;
+    const migrated: Record<string, unknown> = {
+        ...previous,
+        version: 4,
+        ...(previous.version === 1 ? {folders: []} : {}),
+    };
+    // Legacy field names are accepted only here; mixed formats remain invalid.
+    if ('circles' in previous || 'activeCircleId' in previous) {
+        if ('clubs' in previous || 'activeClubId' in previous) return input;
+        const {circles, activeCircleId, ...rest} = migrated;
+        return {...rest, clubs: circles, activeClubId: activeCircleId};
+    }
+    return migrated;
 }, currentDatabaseSchema);
 
 export type Character = z.infer<typeof characterSchema>;
@@ -173,7 +181,7 @@ export type Portrait = z.infer<typeof portraitSchema>;
 export type CharacterFolder = z.infer<typeof characterFolderSchema>;
 export type RelationType = z.infer<typeof relationTypeSchema>;
 export type Connection = z.infer<typeof connectionSchema>;
-export type Circle = z.infer<typeof circleSchema>;
+export type Club = z.infer<typeof clubSchema>;
 export type Database = z.infer<typeof databaseSchema>;
 export type LoadResult = { data: Database; path: string; warning?: string };
 export type ExportFormat = 'png' | 'svg';
@@ -192,12 +200,12 @@ export interface DesktopAPI {
 
 export function emptyDatabase(): Database {
   return {
-    version: 3,
+      version: 4,
     characters: [],
     folders: [],
     relationTypes: [],
-    circles: [],
-    activeCircleId: null,
+      clubs: [],
+      activeClubId: null,
   };
 }
 
@@ -220,7 +228,7 @@ export function deleteCharacter(data: Database, characterId: string): Database {
   return {
     ...data,
     characters: data.characters.filter((c) => c.id !== characterId),
-    circles: data.circles.map((c) => ({
+      clubs: data.clubs.map((c) => ({
       ...c,
       characterIds: c.characterIds.filter((id) => id !== characterId),
       connections: c.connections.filter(
@@ -230,11 +238,11 @@ export function deleteCharacter(data: Database, characterId: string): Database {
   };
 }
 
-export function removeFromCircle(circle: Circle, characterId: string): Circle {
+export function removeFromClub(club: Club, characterId: string): Club {
   return {
-    ...circle,
-    characterIds: circle.characterIds.filter((id) => id !== characterId),
-    connections: circle.connections.filter(
+      ...club,
+      characterIds: club.characterIds.filter((id) => id !== characterId),
+      connections: club.connections.filter(
       (e) => e.sourceId !== characterId && e.targetId !== characterId,
     ),
   };
@@ -244,15 +252,15 @@ export function deleteRelationType(data: Database, typeId: string): Database {
   return {
     ...data,
     relationTypes: data.relationTypes.filter((t) => t.id !== typeId),
-    circles: data.circles.map((c) => ({
+      clubs: data.clubs.map((c) => ({
       ...c,
       connections: c.connections.filter((e) => e.typeId !== typeId),
     })),
   };
 }
 
-export function hasDuplicateConnection(circle: Circle, edge: Connection): boolean {
-  return circle.connections.some(
+export function hasDuplicateConnection(club: Club, edge: Connection): boolean {
+    return club.connections.some(
     (e) =>
       e.id !== edge.id &&
       e.typeId === edge.typeId &&

@@ -1,14 +1,16 @@
-import type { Connection } from '../shared/model';
+import type {Connection} from '../shared/model';
+import {getLocale} from '../shared/i18n';
 
 export type Point = { x: number; y: number };
 export const CENTER = { x: 460, y: 410 };
 export const NODE_RADIUS = 34;
-export function circleRadius(count: number) {
+
+export function clubRadius(count: number) {
   return Math.max(210, Math.min(278, 196 + count * 10), count * 19);
 }
 
 export function diagramBounds(count: number, legendCount = 0) {
-  const radius = circleRadius(count);
+    const radius = clubRadius(count);
   const halfWidth = Math.max(460, radius + 120);
   const halfHeight = Math.max(410, radius + 95);
   const legendHeight = Math.max(0, Math.ceil(legendCount / 4) - 1) * 20;
@@ -21,8 +23,8 @@ export function diagramBounds(count: number, legendCount = 0) {
   };
 }
 
-export function circlePositions(ids: string[]): Map<string, Point> {
-  const radius = circleRadius(ids.length);
+export function clubPositions(ids: string[]): Map<string, Point> {
+    const radius = clubRadius(ids.length);
   return new Map(
     ids.map((id, index) => {
       const angle = -Math.PI / 2 + (index / ids.length) * Math.PI * 2;
@@ -83,4 +85,3 @@ export function truncate(value: string, limit = 22): string {
   const chars = [...value];
   return chars.length > limit ? chars.slice(0, limit - 1).join('') + '…' : value;
 }
-import { getLocale } from '../shared/i18n';

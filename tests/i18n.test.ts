@@ -1,14 +1,14 @@
-import { russianText } from './russian-fixtures';
-import { afterEach, expect, it } from 'vitest';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import {russianText} from './russian-fixtures';
+import {afterEach, expect, it} from 'vitest';
+import {mkdtemp, readdir, readFile, rm, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { getLocale, setLocale, tr, type Message } from '../shared/i18n';
-import english from '../shared/locales/en.json' with { type: 'json' };
-import russian from '../shared/locales/ru.json' with { type: 'json' };
-import { databaseSchema, emptyDatabase } from '../shared/model';
-import { demoDatabase } from '../src/demo';
-import { readLanguage, saveLanguage } from '../electron/preferences';
+import {getLocale, type Message, setLocale, tr} from '../shared/i18n';
+import english from '../shared/locales/en.json' with {type: 'json'};
+import russian from '../shared/locales/ru.json' with {type: 'json'};
+import {databaseSchema, emptyDatabase} from '../shared/model';
+import {demoDatabase} from '../src/demo';
+import {readLanguage, saveLanguage} from '../electron/preferences';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -25,7 +25,7 @@ it('starts in English and translates generated examples and interpolated message
   );
   const example = demoDatabase();
   expect(example.characters[0].name).toBe('Nora West');
-  expect(example.circles[0].name).toBe('House by the Lake');
+    expect(example.clubs[0].name).toBe('House by the Lake');
   setLocale('ru');
   expect(tr('characters.editLabel', russianText('samples.noraFirstName'))).toBe(
     russianText('characters.editLabel', russianText('samples.noraFirstName')),

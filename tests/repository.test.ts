@@ -1,13 +1,13 @@
-import { russianText } from './russian-fixtures';
-import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {russianText} from './russian-fixtures';
+import {afterEach, describe, expect, it} from 'vitest';
+import {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { Repository } from '../electron/repository';
-import { setLocale } from '../shared/i18n';
+import {Repository} from '../electron/repository';
+import {setLocale} from '../shared/i18n';
+import {demoDatabase} from '../src/demo';
 
 setLocale('ru');
-import { demoDatabase } from '../src/demo';
 
 const directories: string[] = [];
 async function repository() {
@@ -21,29 +21,35 @@ afterEach(async () => {
 });
 
 describe('local filesystem persistence', () => {
-  it('migrates an original on-disk library and retains it as the first backup', async () => {
-    const repo = await repository();
-    const current = demoDatabase();
-    const { folders: _folders, ...rest } = current;
-    const legacy = {
-      ...rest,
-      version: 1,
-      characters: current.characters.map(({ folderId: _folderId, ...character }) => character),
-    };
-    await writeFile(repo.file, JSON.stringify(legacy));
-    const loaded = await repo.load();
-    expect(loaded.data).toEqual(current);
-    expect(JSON.parse(await readFile(repo.file, 'utf8'))).toEqual(legacy);
-    loaded.data.folders.push({
-      id: 'family',
-      name: russianText('demo.relationships.family'),
-      parentId: null,
-    });
-    loaded.data.characters[0].folderId = 'family';
-    await repo.save(loaded.data);
-    expect(JSON.parse(await readFile(repo.file + '.bak', 'utf8'))).toEqual(legacy);
-    expect((await new Repository(repo.directory).load()).data).toEqual(loaded.data);
-  });
+    it.each([1, 2, 3])(
+        'migrates an on-disk version %i library and retains the original backup',
+        async (version) => {
+            const repo = await repository();
+            const current = demoDatabase();
+            const {clubs, activeClubId, folders, ...rest} = current;
+            const legacy = {
+                ...rest,
+                version,
+                circles: clubs,
+                activeCircleId: activeClubId,
+                ...(version === 1 ? {} : {folders}),
+                characters: current.characters.map(({folderId: _folderId, ...character}) => character),
+            };
+            await writeFile(repo.file, JSON.stringify(legacy));
+            const loaded = await repo.load();
+            expect(loaded.data).toEqual(current);
+            expect(JSON.parse(await readFile(repo.file, 'utf8'))).toEqual(legacy);
+            loaded.data.folders.push({
+                id: 'family',
+                name: russianText('demo.relationships.family'),
+                parentId: null,
+            });
+            loaded.data.characters[0].folderId = 'family';
+            await repo.save(loaded.data);
+            expect(JSON.parse(await readFile(repo.file + '.bak', 'utf8'))).toEqual(legacy);
+            expect((await new Repository(repo.directory).load()).data).toEqual(loaded.data);
+        },
+    );
   it('initializes an empty library and preserves write ordering and previous backup', async () => {
     const repo = await repository();
     expect((await repo.load()).data.characters).toEqual([]);

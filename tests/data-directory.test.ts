@@ -1,19 +1,19 @@
-import { russianText } from './russian-fixtures';
-import { afterEach, describe, expect, it } from 'vitest';
-import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {russianText} from './russian-fixtures';
+import {afterEach, describe, expect, it} from 'vitest';
+import {existsSync} from 'node:fs';
+import {mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { prepareDataDirectory } from '../electron/data-directory';
-import { Repository } from '../electron/repository';
-import { demoDatabase } from '../src/demo';
-import { setLocale } from '../shared/i18n';
+import {prepareDataDirectory} from '../electron/data-directory';
+import {Repository} from '../electron/repository';
+import {demoDatabase} from '../src/demo';
+import {setLocale} from '../shared/i18n';
 
 setLocale('ru');
 
 const directories: string[] = [];
 async function profileRoot() {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'circles-profile-'));
+    const root = await mkdtemp(path.join(os.tmpdir(), 'clubs-profile-'));
   directories.push(root);
   return root;
 }

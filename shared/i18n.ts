@@ -1,6 +1,6 @@
-import english from './locales/en.json' with { type: 'json' };
-import russian from './locales/ru.json' with { type: 'json' };
-import { z } from 'zod';
+import english from './locales/en.json' with {type: 'json'};
+import russian from './locales/ru.json' with {type: 'json'};
+import {z} from 'zod';
 
 export type Locale = 'ru' | 'en';
 export type Message = keyof typeof english;
@@ -31,9 +31,9 @@ export function tr(message: Message, ...parameters: unknown[]): string {
   return template.replace(/\{(\d+)\}/g, (_, index: string) => String(parameters[Number(index)]));
 }
 
-export function formatCircleCount(count: number): string {
+export function formatClubCount(count: number): string {
   const form = pluralRules[locale].select(count);
   const message =
-    form === 'one' ? 'counts.circlesOne' : form === 'few' ? 'counts.circlesFew' : 'counts.circles';
+      form === 'one' ? 'counts.clubsOne' : form === 'few' ? 'counts.clubsFew' : 'counts.clubs';
   return `${count} ${tr(message)}`;
 }

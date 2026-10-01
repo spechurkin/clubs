@@ -307,7 +307,8 @@ input[type='checkbox'] {
   color: #98a08d;
   font-weight: 600;
 }
-.new-circle {
+
+.new-club {
   justify-content: flex-start;
   gap: 9px;
   padding: 10px 13px;
@@ -317,17 +318,20 @@ input[type='checkbox'] {
   border: 1px solid #e4ebdc;
   width: 100%;
 }
-.new-circle:hover {
+
+.new-club:hover {
   background: #e6eedf;
 }
-.circle-list {
+
+.club-list {
   overflow: auto;
   min-height: 70px;
   max-height: 38vh;
   margin: 0 -9px;
   flex-shrink: 1;
 }
-.circle-list-item {
+
+.club-list-item {
   display: flex;
   gap: 12px;
   padding: 13px 11px;
@@ -338,21 +342,25 @@ input[type='checkbox'] {
   margin: 3px 0;
   color: #92998d;
 }
-.circle-list-item.active {
+
+.club-list-item.active {
   background: #f0f4ec;
   color: #688c52;
 }
-.circle-list-item:hover {
+
+.club-list-item:hover {
   background: #f5f7f1;
 }
-.circle-list-item span {
+
+.club-list-item span {
   display: flex;
   flex: 1;
   min-width: 0;
   flex-direction: column;
   gap: 5px;
 }
-.circle-list-item strong {
+
+.club-list-item strong {
   font-size: 11px;
   font-weight: 650;
   overflow: hidden;
@@ -360,7 +368,8 @@ input[type='checkbox'] {
   white-space: nowrap;
   color: #526248;
 }
-.circle-list-item small {
+
+.club-list-item small {
   font-size: 9px;
   color: #a0a695;
 }
@@ -512,7 +521,8 @@ input[type='checkbox'] {
   align-items: center;
   gap: 12px;
 }
-.more-circle {
+
+.more-club {
   margin-right: 2px;
 }
 .statusbar {
@@ -1959,7 +1969,7 @@ input[type='checkbox'] {
   font-size: 11px;
 }
 .member-main small,
-.circle-list-item small,
+.club-list-item small,
 .picker-row small,
 .connection-row small,
 .type-card p,

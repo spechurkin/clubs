@@ -1,12 +1,5 @@
-import { tr, getLocale, setLocale, subscribeLocale, isLocale } from '../shared/i18n';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from 'react';
+import {getLocale, isLocale, setLocale, subscribeLocale, tr} from '../shared/i18n';
+import {type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore,} from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -15,8 +8,8 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Circle as CircleIcon,
-  CircleDot,
+  Circle as ClubIcon,
+  CircleDot as ClubDot,
   Copy,
   Download,
   Eye,
@@ -25,7 +18,7 @@ import {
   FolderPlus,
   HardDrive,
   Link2,
-  LoaderCircle,
+  LoaderCircle as LoadingIcon,
   Maximize,
   MoreHorizontal,
   Pencil,
@@ -42,15 +35,15 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import {
+  type Character,
+  type CharacterFolder,
+  type Club,
+  type Database,
   deleteCharacter,
   deleteCharacterFolder,
   deleteRelationType,
-  removeFromCircle,
-  type Character,
-  type CharacterFolder,
-  type Circle,
-  type Database,
   type RelationType,
+  removeFromClub,
 } from '../shared/model';
 import {
   createCharactersTransfer,
@@ -59,26 +52,19 @@ import {
   describeImport,
   type TransferPackage,
 } from '../shared/transfer';
-import { folderPath, folderSubtree } from '../shared/folders';
-import { Avatar, EmptyHint, Modal, ScrollArea } from './components';
-import {
-  CharacterForm,
-  CircleForm,
-  ConnectionForm,
-  FolderForm,
-  ParticipantsForm,
-  TypeForm,
-} from './forms';
+import {folderPath, folderSubtree} from '../shared/folders';
+import {Avatar, EmptyHint, Modal, ScrollArea} from './components';
+import {CharacterForm, ClubForm, ConnectionForm, FolderForm, ParticipantsForm, TypeForm,} from './forms';
 import CharacterLibrary from './CharacterLibrary';
 import Diagram from './Diagram';
-import { demoDatabase } from './demo';
-import { storage } from './storage';
-import { useLibrary } from './useLibrary';
-import { sortByName, sortConnections } from './sorting';
+import {demoDatabase} from './demo';
+import {storage} from './storage';
+import {useLibrary} from './useLibrary';
+import {sortByName, sortConnections} from './sorting';
 
-type View = 'circles' | 'characters' | 'relations' | 'settings';
+type View = 'clubs' | 'characters' | 'relations' | 'settings';
 type Editor = {
-  kind: 'character' | 'folder' | 'type' | 'circle' | 'participants' | 'connection';
+    kind: 'character' | 'folder' | 'type' | 'club' | 'participants' | 'connection';
   id?: string;
   sourceId?: string;
   targetId?: string;
@@ -109,7 +95,7 @@ export default function App() {
   }, [locale]);
   const library = useLibrary();
   const { data, commit } = library;
-  const [view, setView] = useState<View>('circles');
+    const [view, setView] = useState<View>('clubs');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<string>();
@@ -124,12 +110,12 @@ export default function App() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [linking, setLinking] = useState(false);
   const [exportMenu, setExportMenu] = useState(false);
-  const [circleMenu, setCircleMenu] = useState(false);
+    const [clubMenu, setClubMenu] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState('');
-  const circle = data?.circles.find((c) => c.id === data.activeCircleId) || data?.circles[0];
+    const club = data?.clubs.find((c) => c.id === data.activeClubId) || data?.clubs[0];
   const character = data?.characters.find((c) => c.id === selectedCharacter);
-  const edge = circle?.connections.find((e) => e.id === selectedEdge);
+    const edge = club?.connections.find((e) => e.id === selectedEdge);
   const closeEditor = useCallback(() => setEditor(null), []);
   const clearSelection = () => {
     setSelectedCharacter(undefined);
@@ -143,8 +129,8 @@ export default function App() {
     setZoom(1);
     setPan({ x: 0, y: 0 });
     setLinking(false);
-    setCircleMenu(false);
-  }, [circle?.id]);
+      setClubMenu(false);
+  }, [club?.id]);
   useEffect(() => {
     if (
       data &&
@@ -167,7 +153,7 @@ export default function App() {
         clearSelection();
         setLinking(false);
         setExportMenu(false);
-        setCircleMenu(false);
+          setClubMenu(false);
       }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault();
@@ -181,18 +167,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', key);
   }, [library.flush]);
 
-  const updateCircle = (update: (circle: Circle) => Circle) => {
-    if (circle)
+    const updateClub = (update: (club: Club) => Club) => {
+        if (club)
       commit((data) => ({
         ...data,
-        circles: data.circles.map((c) => (c.id === circle.id ? update(c) : c)),
+          clubs: data.clubs.map((c) => (c.id === club.id ? update(c) : c)),
       }));
   };
   const changeView = (next: View) => {
     setView(next);
     setSearch('');
     setExportMenu(false);
-    setCircleMenu(false);
+      setClubMenu(false);
   };
   const newCharacter = () => setEditor({ kind: 'character' });
   const newFolder = () =>
@@ -202,7 +188,7 @@ export default function App() {
     });
   const newType = () => setEditor({ kind: 'type' });
   const newConnection = () => {
-    if (!circle || circle.characterIds.length < 2) {
+      if (!club || club.characterIds.length < 2) {
       setEditor({ kind: 'participants' });
       return;
     }
@@ -214,14 +200,14 @@ export default function App() {
       characters: data.characters.some((c) => c.id === character.id)
         ? data.characters.map((c) => (c.id === character.id ? character : c))
         : [...data.characters, character],
-      circles:
-        add && circle
-          ? data.circles.map((c) =>
-              c.id === circle.id && !c.characterIds.includes(character.id)
+        clubs:
+            add && club
+                ? data.clubs.map((c) =>
+                    c.id === club.id && !c.characterIds.includes(character.id)
                 ? { ...c, characterIds: [...c.characterIds, character.id] }
                 : c,
             )
-          : data.circles,
+                : data.clubs,
     }));
     closeEditor();
     notify(tr('notifications.characterSaved'));
@@ -269,15 +255,15 @@ export default function App() {
       },
     });
   };
-  const saveCircle = (next: Circle) => {
+    const saveClub = (next: Club) => {
     commit((data) => ({
       ...data,
-      circles: data.circles.some((c) => c.id === next.id)
-        ? data.circles.map((c) => (c.id === next.id ? next : c))
-        : [...data.circles, next],
-      activeCircleId: next.id,
+        clubs: data.clubs.some((c) => c.id === next.id)
+            ? data.clubs.map((c) => (c.id === next.id ? next : c))
+            : [...data.clubs, next],
+        activeClubId: next.id,
     }));
-    setView('circles');
+        setView('clubs');
     closeEditor();
   };
   const askDeleteCharacter = (character: Character) =>
@@ -343,12 +329,12 @@ export default function App() {
     }
   };
   const makeExport = async (format: 'png' | 'svg') => {
-    if (!data || !circle) return;
+      if (!data || !club) return;
     setExportMenu(false);
     setBusy(true);
     try {
       const { exportDiagram } = await import('./export');
-      if (await exportDiagram(data, circle, format, labels))
+        if (await exportDiagram(data, club, format, labels))
         notify(tr('notifications.diagramSaved', format.toUpperCase()));
     } catch (error) {
       notify(error instanceof Error ? error.message : tr('errors.diagramExport'));
@@ -365,13 +351,13 @@ export default function App() {
     setSelectedEdge(undefined);
   };
   const reorder = (id: string, direction: number) =>
-    updateCircle((circle) => {
-      const ids = [...circle.characterIds];
+      updateClub((club) => {
+          const ids = [...club.characterIds];
       const index = ids.indexOf(id);
       const next = index + direction;
-      if (next < 0 || next >= ids.length) return circle;
+          if (next < 0 || next >= ids.length) return club;
       [ids[index], ids[next]] = [ids[next], ids[index]];
-      return { ...circle, characterIds: ids };
+          return {...club, characterIds: ids};
     });
 
   if (!data)
@@ -381,7 +367,7 @@ export default function App() {
         <h1>{tr('app.name')}</h1>
         {library.status === 'loading' ? (
           <>
-            <LoaderCircle className="spin" size={24} />
+              <LoadingIcon className="spin" size={24}/>
             <p>{tr('library.opening')}</p>
           </>
         ) : (
@@ -402,20 +388,20 @@ export default function App() {
 
   const relationTypes = sortByName(data.relationTypes);
   const members = sortByName(
-    data.characters.filter((character) => circle?.characterIds.includes(character.id)),
+      data.characters.filter((character) => club?.characterIds.includes(character.id)),
   );
-  const connections = sortConnections(circle?.connections || [], data);
+    const connections = sortConnections(club?.connections || [], data);
   const title =
-    view === 'circles'
-      ? circle?.name || tr('circles.emptyTitle')
+      view === 'clubs'
+          ? club?.name || tr('clubs.emptyTitle')
       : view === 'characters'
         ? tr('characters.libraryTitle')
         : view === 'relations'
           ? tr('relationships.paletteTitle')
           : tr('settings.title');
   const subtitle =
-    view === 'circles'
-      ? circle?.description || tr('circles.subtitle')
+      view === 'clubs'
+          ? club?.description || tr('clubs.subtitle')
       : view === 'characters'
         ? tr('characters.subtitle')
         : view === 'relations'
@@ -428,14 +414,14 @@ export default function App() {
         <button
           className="brand-mark"
           aria-label={tr('app.name')}
-          onClick={() => changeView('circles')}
+          onClick={() => changeView('clubs')}
         >
           <OrbitMark size={36} />
         </button>
         <div className="rail-links">
           {(
             [
-              ['circles', CircleDot, tr('navigation.circles')],
+                ['clubs', ClubDot, tr('navigation.clubs')],
               ['characters', Users, tr('navigation.characters')],
               ['relations', Link2, tr('navigation.relationships')],
             ] as const
@@ -475,24 +461,24 @@ export default function App() {
           <span className="brand-caption">{tr('app.tagline')}</span>
         </div>
         <div className="section-heading">
-          <span>{tr('circles.sidebarHeading')}</span>
-          <Count>{data.circles.length}</Count>
+            <span>{tr('clubs.sidebarHeading')}</span>
+            <Count>{data.clubs.length}</Count>
         </div>
-        <button className="button new-circle" onClick={() => setEditor({ kind: 'circle' })}>
+          <button className="button new-club" onClick={() => setEditor({kind: 'club'})}>
           <Plus size={17} />
-          {tr('circles.new')}
+              {tr('clubs.new')}
         </button>
-        <div className="circle-list">
-          {data.circles.map((c) => (
+          <div className="club-list">
+              {data.clubs.map((c) => (
             <button
-              className={`circle-list-item ${c.id === circle?.id && view === 'circles' ? 'active' : ''}`}
+                className={`club-list-item ${c.id === club?.id && view === 'clubs' ? 'active' : ''}`}
               key={c.id}
               onClick={() => {
-                commit((data) => ({ ...data, activeCircleId: c.id }));
-                changeView('circles');
+                  commit((data) => ({...data, activeClubId: c.id}));
+                  changeView('clubs');
               }}
             >
-              <CircleIcon size={17} />
+                <ClubIcon size={17}/>
               <span>
                 <strong>{c.name}</strong>
                 <small>
@@ -502,10 +488,10 @@ export default function App() {
                   {tr('counts.connectionsSuffix')}
                 </small>
               </span>
-              {c.id === circle?.id && view === 'circles' && <ChevronRight size={15} />}
+                {c.id === club?.id && view === 'clubs' && <ChevronRight size={15}/>}
             </button>
           ))}
-          {!data.circles.length && <p className="sidebar-hint">{tr('circles.sidebarHint')}</p>}
+              {!data.clubs.length && <p className="sidebar-hint">{tr('clubs.sidebarHint')}</p>}
         </div>
         <div className="sidebar-relations">
           <div className="section-heading">
@@ -575,8 +561,8 @@ export default function App() {
             <div className="breadcrumb">
               {tr('navigation.workspaceHeading')}
               <span>/</span>
-              {view === 'circles'
-                ? tr('navigation.circlesHeading')
+                {view === 'clubs'
+                    ? tr('navigation.clubsHeading')
                 : view === 'characters'
                   ? tr('navigation.charactersHeading')
                   : view === 'relations'
@@ -587,41 +573,41 @@ export default function App() {
             <p>{subtitle}</p>
           </div>
           <div className="header-actions">
-            {view === 'circles' && circle && (
+              {view === 'clubs' && club && (
               <>
                 <div className="dropdown-wrap">
                   <button
-                    className="icon-button more-circle"
-                    aria-label={tr('circles.actionsLabel')}
-                    onClick={() => setCircleMenu(!circleMenu)}
+                      className="icon-button more-club"
+                      aria-label={tr('clubs.actionsLabel')}
+                      onClick={() => setClubMenu(!clubMenu)}
                   >
                     <MoreHorizontal size={22} />
                   </button>
-                  {circleMenu && (
+                    {clubMenu && (
                     <div className="dropdown">
                       <button
                         onClick={() => {
-                          setEditor({ kind: 'circle', id: circle.id });
-                          setCircleMenu(false);
+                            setEditor({kind: 'club', id: club.id});
+                            setClubMenu(false);
                         }}
                       >
                         <Pencil size={15} />
-                        {tr('circles.edit')}
+                          {tr('clubs.edit')}
                       </button>
                       <button
                         onClick={() => {
                           const copy = {
-                            ...circle,
+                              ...club,
                             id: crypto.randomUUID(),
-                            name: tr('circles.copyName', circle.name.slice(0, 70)),
-                            characterIds: [...circle.characterIds],
-                            connections: circle.connections.map((e) => ({
+                              name: tr('clubs.copyName', club.name.slice(0, 70)),
+                              characterIds: [...club.characterIds],
+                              connections: club.connections.map((e) => ({
                               ...e,
                               id: crypto.randomUUID(),
                             })),
                           };
-                          saveCircle(copy);
-                          setCircleMenu(false);
+                            saveClub(copy);
+                            setClubMenu(false);
                         }}
                       >
                         <Copy size={15} />
@@ -631,21 +617,21 @@ export default function App() {
                         className="danger-text"
                         onClick={() => {
                           setConfirmation({
-                            title: tr('circles.deleteTitle'),
-                            text: tr('circles.deleteMessage', circle.name),
+                              title: tr('clubs.deleteTitle'),
+                              text: tr('clubs.deleteMessage', club.name),
                             action: () => {
                               commit((data) => {
-                                const circles = data.circles.filter((c) => c.id !== circle.id);
-                                return { ...data, circles, activeCircleId: circles[0]?.id || null };
+                                  const clubs = data.clubs.filter((c) => c.id !== club.id);
+                                  return {...data, clubs, activeClubId: clubs[0]?.id || null};
                               });
                               clearSelection();
                             },
                           });
-                          setCircleMenu(false);
+                            setClubMenu(false);
                         }}
                       >
                         <Trash2 size={15} />
-                        {tr('circles.delete')}
+                          {tr('clubs.delete')}
                       </button>
                     </div>
                   )}
@@ -665,8 +651,8 @@ export default function App() {
                       <button
                         onClick={() =>
                           void exportJSON(
-                            createStoriesTransfer(data, [circle.id]),
-                            tr('filenames.story', circle.name),
+                              createStoriesTransfer(data, [club.id]),
+                              tr('filenames.story', club.name),
                           )
                         }
                       >
@@ -822,20 +808,20 @@ export default function App() {
           </div>
         )}
 
-        {view === 'circles' && (
+          {view === 'clubs' && (
           <div className="editor-layout">
             <section
               className={`canvas ${linking ? 'linking' : ''}`}
               aria-label={tr('diagram.editorLabel')}
             >
-              {circle && circle.characterIds.length > 0 ? (
+                {club && club.characterIds.length > 0 ? (
                 <>
                   <div className="canvas-top">
                     <div className="canvas-meta">
                       <span className="status-dot" />
                       {tr('diagram.heading')}
                       <span className="meta-divider">/</span>
-                      {circle.characterIds.length}
+                        {club.characterIds.length}
                       {tr('counts.membersSuffix')}
                     </div>
                     <button
@@ -883,7 +869,7 @@ export default function App() {
                       style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})` }}
                     >
                       <Diagram
-                        circle={circle}
+                          club={club}
                         characters={data.characters}
                         types={data.relationTypes}
                         selectedCharacter={selectedCharacter}
@@ -953,19 +939,17 @@ export default function App() {
                   <div className="empty-orbit">
                     <OrbitMark size={120} />
                   </div>
-                  <span className="eyebrow">{tr('circles.emptyEyebrow')}</span>
-                  <h2>{circle ? tr('circles.noMembersHeading') : tr('circles.emptyHeading')}</h2>
-                  <p>
-                    {circle ? tr('circles.noMembersDescription') : tr('circles.emptyDescription')}
-                  </p>
+                    <span className="eyebrow">{tr('clubs.emptyEyebrow')}</span>
+                    <h2>{club ? tr('clubs.noMembersHeading') : tr('clubs.emptyHeading')}</h2>
+                    <p>{club ? tr('clubs.noMembersDescription') : tr('clubs.emptyDescription')}</p>
                   <button
                     className="button primary"
-                    onClick={() => setEditor({ kind: circle ? 'participants' : 'circle' })}
+                    onClick={() => setEditor({kind: club ? 'participants' : 'club'})}
                   >
                     <Plus size={17} />
-                    {circle ? tr('characters.add') : tr('circles.createFirst')}
+                      {club ? tr('characters.add') : tr('clubs.createFirst')}
                   </button>
-                  {!circle && !data.characters.length && (
+                    {!club && !data.characters.length && (
                     <button
                       className="text-button demo-button"
                       onClick={() => {
@@ -990,7 +974,7 @@ export default function App() {
                     <i />
                     <span>
                       <b>03</b>
-                      {tr('circles.defaultName')}
+                        {tr('clubs.defaultName')}
                     </span>
                   </div>
                 </div>
@@ -998,7 +982,7 @@ export default function App() {
             </section>
 
             <aside className="inspector">
-              {character && circle ? (
+                {character && club ? (
                 <>
                   <div className="inspector-title">
                     <span>{tr('characters.detailHeading')}</span>
@@ -1033,7 +1017,7 @@ export default function App() {
                     <span>{tr('characters.connectionsHeading')}</span>
                     <Count>
                       {
-                        circle.connections.filter(
+                          club.connections.filter(
                           (e) => e.sourceId === character.id || e.targetId === character.id,
                         ).length
                       }
@@ -1046,7 +1030,7 @@ export default function App() {
                         <ConnectionRow
                           key={e.id}
                           edgeId={e.id}
-                          circle={circle}
+                          club={club}
                           data={data}
                           onClick={() => {
                             setSelectedEdge(e.id);
@@ -1063,7 +1047,7 @@ export default function App() {
                           title: tr('members.removeTitle'),
                           text: tr('members.removeMessage', character.name),
                           action: () => {
-                            updateCircle((c) => removeFromCircle(c, character.id));
+                              updateClub((c) => removeFromClub(c, character.id));
                             clearSelection();
                           },
                         });
@@ -1074,7 +1058,7 @@ export default function App() {
                     </button>
                   </div>
                 </>
-              ) : edge && circle ? (
+                ) : edge && club ? (
                 <>
                   <div className="inspector-title">
                     <span>{tr('connections.detailHeading')}</span>
@@ -1119,7 +1103,7 @@ export default function App() {
                           title: tr('connections.deleteTitle'),
                           text: tr('connections.deleteMessage'),
                           action: () => {
-                            updateCircle((c) => ({
+                              updateClub((c) => ({
                               ...c,
                               connections: c.connections.filter((e) => e.id !== edge.id),
                             }));
@@ -1141,20 +1125,20 @@ export default function App() {
                       onClick={() => setInspectorTab('members')}
                     >
                       {tr('inspector.members')}
-                      <Count>{circle?.characterIds.length || 0}</Count>
+                        <Count>{club?.characterIds.length || 0}</Count>
                     </button>
                     <button
                       className={inspectorTab === 'connections' ? 'active' : ''}
                       onClick={() => setInspectorTab('connections')}
                     >
                       {tr('inspector.connections')}
-                      <Count>{circle?.connections.length || 0}</Count>
+                        <Count>{club?.connections.length || 0}</Count>
                     </button>
                   </div>
                   <ScrollArea
                     className="inspector-content"
-                    key={`${circle?.id}:${inspectorTab}`}
-                    scrollKey={`${circle?.id}:${inspectorTab}`}
+                    key={`${club?.id}:${inspectorTab}`}
+                    scrollKey={`${club?.id}:${inspectorTab}`}
                     positions={inspectorPositions.current}
                   >
                     {inspectorTab === 'members' ? (
@@ -1163,7 +1147,7 @@ export default function App() {
                           <span>{tr('members.heading')}</span>
                           <button
                             className="icon-button"
-                            disabled={!circle}
+                            disabled={!club}
                             aria-label={tr('members.add')}
                             onClick={() => setEditor({ kind: 'participants' })}
                           >
@@ -1171,10 +1155,10 @@ export default function App() {
                           </button>
                         </div>
                         <div className="inspector-list">
-                          {circle &&
+                            {club &&
                             members.map((c) => {
                               const id = c.id;
-                              const index = circle.characterIds.indexOf(id);
+                                const index = club.characterIds.indexOf(id);
                               return (
                                 <div className="member-row" key={id}>
                                   <button className="member-main" onClick={() => pickCharacter(id)}>
@@ -1183,7 +1167,7 @@ export default function App() {
                                       <strong>{c.name}</strong>
                                       <small>
                                         {
-                                          circle.connections.filter(
+                                            club.connections.filter(
                                             (e) => e.sourceId === id || e.targetId === id,
                                           ).length
                                         }{' '}
@@ -1205,7 +1189,7 @@ export default function App() {
                                       className="icon-button"
                                       aria-label={tr('members.moveDownLabel', c.name)}
                                       title={tr('members.moveForwardHint')}
-                                      disabled={index === circle.characterIds.length - 1}
+                                      disabled={index === club.characterIds.length - 1}
                                       onClick={() => reorder(id, 1)}
                                     >
                                       <ArrowDown size={12} />
@@ -1215,7 +1199,7 @@ export default function App() {
                               );
                             })}
                         </div>
-                        {circle && (
+                          {club && (
                           <button
                             className="button dashed full-width"
                             onClick={() => setEditor({ kind: 'participants' })}
@@ -1224,7 +1208,7 @@ export default function App() {
                             {tr('members.fromLibrary')}
                           </button>
                         )}
-                        {!circle?.characterIds.length && (
+                          {!club?.characterIds.length && (
                           <EmptyHint>{tr('members.emptyHint')}</EmptyHint>
                         )}
                       </>
@@ -1235,19 +1219,19 @@ export default function App() {
                           <button
                             className="icon-button"
                             aria-label={tr('connections.create')}
-                            disabled={!circle}
+                            disabled={!club}
                             onClick={newConnection}
                           >
                             <Plus size={17} />
                           </button>
                         </div>
                         <div className="inspector-list">
-                          {circle &&
+                            {club &&
                             connections.map((e) => (
                               <ConnectionRow
                                 key={e.id}
                                 edgeId={e.id}
-                                circle={circle}
+                                club={club}
                                 data={data}
                                 onClick={() => {
                                   setSelectedEdge(e.id);
@@ -1256,7 +1240,7 @@ export default function App() {
                               />
                             ))}
                         </div>
-                        {!circle?.connections.length && (
+                          {!club?.connections.length && (
                           <EmptyHint>{tr('connections.createHint')}</EmptyHint>
                         )}
                       </>
@@ -1319,7 +1303,7 @@ export default function App() {
                   <div>
                     <h2>{type.name}</h2>
                     <p>
-                      {data.circles.reduce(
+                        {data.clubs.reduce(
                         (sum, c) => sum + c.connections.filter((e) => e.typeId === type.id).length,
                         0,
                       )}{' '}
@@ -1411,8 +1395,8 @@ export default function App() {
                   <span>{tr('counts.characters')}</span>
                 </div>
                 <div>
-                  <strong>{data.circles.length}</strong>
-                  <span>{tr('counts.circles')}</span>
+                    <strong>{data.clubs.length}</strong>
+                    <span>{tr('counts.clubs')}</span>
                 </div>
                 <div>
                   <strong>{data.relationTypes.length}</strong>
@@ -1524,7 +1508,7 @@ export default function App() {
                 </p>
                 <p>
                   <b>3</b>
-                  <span>{tr('help.circleStep')}</span>
+                    <span>{tr('help.clubStep')}</span>
                 </p>
               </div>
               <p className="field-hint">{tr('help.shortcuts')}</p>
@@ -1535,7 +1519,7 @@ export default function App() {
         <footer className="statusbar">
           <span className={`save-status ${library.status === 'error' ? 'error' : ''}`}>
             {library.status === 'saving' ? (
-              <LoaderCircle size={12} className="spin" />
+                <LoadingIcon size={12} className="spin"/>
             ) : (
               <Check size={12} />
             )}
@@ -1546,8 +1530,8 @@ export default function App() {
                 : tr('save.saved')}
           </span>
           <span>
-            {view === 'circles' && circle
-              ? tr('counts.diagramSummary', circle.connections.length, circle.characterIds.length)
+            {view === 'clubs' && club
+                ? tr('counts.diagramSummary', club.connections.length, club.characterIds.length)
               : tr('app.footer')}
           </span>
         </footer>
@@ -1568,10 +1552,10 @@ export default function App() {
                   ? editor.id
                     ? tr('relationships.edit')
                     : tr('relationships.new')
-                  : editor.kind === 'circle'
+                        : editor.kind === 'club'
                     ? editor.id
-                      ? tr('circles.edit')
-                      : tr('circles.new')
+                                ? tr('clubs.edit')
+                                : tr('clubs.new')
                     : editor.kind === 'participants'
                       ? tr('members.title')
                       : editor.id
@@ -1593,7 +1577,7 @@ export default function App() {
               character={data.characters.find((c) => c.id === editor.id)}
               onSave={saveCharacter}
               onClose={closeEditor}
-              canAddToCircle={view === 'circles' && !!circle}
+              canAddToClub={view === 'clubs' && !!club}
               folders={data.folders}
               initialFolderId={
                 view === 'characters' && activeFolder && activeFolder !== ':unfiled'
@@ -1619,24 +1603,24 @@ export default function App() {
               onClose={closeEditor}
             />
           )}
-          {editor.kind === 'circle' && (
-            <CircleForm
-              circle={data.circles.find((c) => c.id === editor.id)}
-              onSave={saveCircle}
+            {editor.kind === 'club' && (
+                <ClubForm
+                    club={data.clubs.find((c) => c.id === editor.id)}
+                    onSave={saveClub}
               onClose={closeEditor}
             />
           )}
-          {editor.kind === 'connection' && circle && (
+            {editor.kind === 'connection' && club && (
             <ConnectionForm
-              connection={circle.connections.find((e) => e.id === editor.id)}
-              circle={circle}
+                connection={club.connections.find((e) => e.id === editor.id)}
+                club={club}
               data={data}
               sourceId={editor.sourceId}
               targetId={editor.targetId}
               onClose={closeEditor}
               onNewType={newType}
               onSave={(edge) => {
-                updateCircle((c) => ({
+                  updateClub((c) => ({
                   ...c,
                   connections: c.connections.some((e) => e.id === edge.id)
                     ? c.connections.map((e) => (e.id === edge.id ? edge : e))
@@ -1649,16 +1633,16 @@ export default function App() {
               }}
             />
           )}
-          {editor.kind === 'participants' && circle && (
+            {editor.kind === 'participants' && club && (
             <ParticipantsForm
-              circle={circle}
+                club={club}
               characters={data.characters}
               folders={data.folders}
               onClose={closeEditor}
               onNewCharacter={newCharacter}
               onSave={(ids) => {
                 const members = new Set(ids);
-                updateCircle((c) => ({
+                  updateClub((c) => ({
                   ...c,
                   characterIds: ids,
                   connections: c.connections.filter(
@@ -1711,16 +1695,16 @@ export default function App() {
 
 function ConnectionRow({
   edgeId,
-  circle,
+                           club,
   data,
   onClick,
 }: {
   edgeId: string;
-  circle: Circle;
+    club: Club;
   data: Database;
   onClick: () => void;
 }) {
-  const edge = circle.connections.find((e) => e.id === edgeId)!;
+    const edge = club.connections.find((e) => e.id === edgeId)!;
   const type = data.relationTypes.find((t) => t.id === edge.typeId)!;
   return (
     <button className="connection-row" onClick={onClick}>

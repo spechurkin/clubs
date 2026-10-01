@@ -112,14 +112,14 @@ jobs:
         if: runner.os != 'Linux'
         run: npx playwright test --reporter=list,html
         env:
-          CIRCLE_TEST_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
+          CLUB_TEST_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
           PLAYWRIGHT_HTML_OPEN: never
 
       - name: Test packaged application on Linux
         if: runner.os == 'Linux'
         run: xvfb-run --auto-servernum npx playwright test --reporter=list,html
         env:
-          CIRCLE_TEST_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
+          CLUB_TEST_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
           PLAYWRIGHT_HTML_OPEN: never
 
       - name: Upload desktop test reports

@@ -1,18 +1,10 @@
-import { tr } from '../shared/i18n';
-import type { Character, Circle, RelationType } from '../shared/model';
-import { sortByName } from './sorting';
-import {
-  CENTER,
-  circleRadius,
-  diagramBounds,
-  circlePositions,
-  edgeGeometry,
-  initials,
-  truncate,
-} from './geometry';
+import {tr} from '../shared/i18n';
+import type {Character, Club, RelationType} from '../shared/model';
+import {sortByName} from './sorting';
+import {CENTER, clubPositions, clubRadius, diagramBounds, edgeGeometry, initials, truncate,} from './geometry';
 
 type Props = {
-  circle: Circle;
+    club: Club;
   characters: Character[];
   types: RelationType[];
   selectedCharacter?: string;
@@ -26,7 +18,7 @@ type Props = {
 };
 
 export default function Diagram({
-  circle,
+                                    club,
   characters,
   types,
   selectedCharacter,
@@ -38,10 +30,10 @@ export default function Diagram({
   onEdge,
   onBackground,
 }: Props) {
-  const positions = circlePositions(circle.characterIds);
-  const radius = circleRadius(circle.characterIds.length);
-  const legend = sortByName(types.filter((t) => circle.connections.some((e) => e.typeId === t.id)));
-  const bounds = diagramBounds(circle.characterIds.length, clean ? legend.length : 0);
+    const positions = clubPositions(club.characterIds);
+    const radius = clubRadius(club.characterIds.length);
+    const legend = sortByName(types.filter((t) => club.connections.some((e) => e.typeId === t.id)));
+    const bounds = diagramBounds(club.characterIds.length, clean ? legend.length : 0);
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -50,7 +42,7 @@ export default function Diagram({
       height={clean ? bounds.height : undefined}
       className="diagram"
       role={clean ? 'img' : 'group'}
-      aria-label={tr('diagram.titleLabel', circle.name)}
+      aria-label={tr('diagram.titleLabel', club.name)}
       data-testid="diagram"
     >
       <defs>
@@ -112,7 +104,7 @@ export default function Diagram({
             fontWeight="700"
             fill="#273733"
           >
-            {circle.name}
+              {club.name}
           </text>
           <text
             x={bounds.x + 38}
@@ -121,7 +113,7 @@ export default function Diagram({
             fontSize="12"
             fill="#71807b"
           >
-            {truncate(circle.description, 95)}
+              {truncate(club.description, 95)}
           </text>
         </>
       )}
@@ -144,11 +136,11 @@ export default function Diagram({
         strokeWidth="1"
         pointerEvents="none"
       />
-      {circle.connections.map((edge) => {
+        {club.connections.map((edge) => {
         if (hiddenTypes.has(edge.typeId)) return null;
         const type = types.find((t) => t.id === edge.typeId);
         if (!type || !positions.has(edge.sourceId) || !positions.has(edge.targetId)) return null;
-        const { path, label } = edgeGeometry(edge, circle.connections, positions);
+            const {path, label} = edgeGeometry(edge, club.connections, positions);
         const selected = selectedEdge === edge.id;
         const faded =
           !!selectedCharacter &&
@@ -222,7 +214,7 @@ export default function Diagram({
           </g>
         );
       })}
-      {circle.characterIds.map((id) => {
+        {club.characterIds.map((id) => {
         const character = characters.find((c) => c.id === id);
         const position = positions.get(id);
         if (!character || !position) return null;
@@ -288,7 +280,7 @@ export default function Diagram({
               fontWeight="600"
               fontSize="12.5"
             >
-              {truncate(character.name, circle.characterIds.length > 12 ? 14 : 24)}
+                {truncate(character.name, club.characterIds.length > 12 ? 14 : 24)}
             </text>
           </g>
         );

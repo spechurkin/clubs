@@ -1,16 +1,10 @@
-import { russianText } from '../russian-fixtures';
-import {
-  test,
-  expect,
-  _electron as electron,
-  type ElectronApplication,
-  type Page,
-} from '@playwright/test';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import {russianText} from '../russian-fixtures';
+import {_electron as electron, type ElectronApplication, expect, type Page, test,} from '@playwright/test';
+import {mkdir, mkdtemp, readFile, writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import { demoDatabase } from '../../src/demo';
-import { databaseSchema, type Character } from '../../shared/model';
-import { setLocale } from '../../shared/i18n';
+import {demoDatabase} from '../../src/demo';
+import {type Character, databaseSchema} from '../../shared/model';
+import {setLocale} from '../../shared/i18n';
 
 setLocale('ru');
 
@@ -26,10 +20,10 @@ async function launch(directory: string) {
       ([key, value]) => value !== undefined && key !== 'ELECTRON_RUN_AS_NODE',
     ),
   ) as Record<string, string>;
-  env.CIRCLE_DATA_DIR = directory;
+    env.CLUB_DATA_DIR = directory;
   app = await electron.launch({
-    executablePath: process.env.CIRCLE_TEST_EXECUTABLE,
-    args: process.env.CIRCLE_TEST_EXECUTABLE ? [] : [root],
+      executablePath: process.env.CLUB_TEST_EXECUTABLE,
+      args: process.env.CLUB_TEST_EXECUTABLE ? [] : [root],
     env,
   });
   page = await app.firstWindow();

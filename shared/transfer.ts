@@ -1,7 +1,7 @@
-import { tr } from './i18n';
-import { z } from 'zod';
-import { databaseSchema, emptyDatabase, type Database, type LoadResult } from './model';
-import { folderEntries, folderSubtree, withFolderAncestors } from './folders';
+import {tr} from './i18n';
+import {z} from 'zod';
+import {type Database, databaseSchema, emptyDatabase, type LoadResult} from './model';
+import {folderEntries, folderSubtree, withFolderAncestors} from './folders';
 
 export const transferSchema = z
   .object({
@@ -13,11 +13,11 @@ export const transferSchema = z
   .strict()
   .superRefine((file, ctx) => {
     const issue = (message: string) => ctx.addIssue({ code: 'custom', message });
-    if (file.kind === 'characters' && (file.data.circles.length || file.data.relationTypes.length))
+      if (file.kind === 'characters' && (file.data.clubs.length || file.data.relationTypes.length))
       issue(tr('validation.characterTransferContent'));
     if (
       file.kind === 'relations' &&
-      (file.data.characters.length || file.data.folders.length || file.data.circles.length)
+        (file.data.characters.length || file.data.folders.length || file.data.clubs.length)
     )
       issue(tr('validation.relationshipTransferContent'));
   });
@@ -27,7 +27,7 @@ export type ImportSummary = {
   characters: number;
   folders: number;
   relationTypes: number;
-  circles: number;
+    clubs: number;
   reused: number;
 };
 export type TransferImportResult = LoadResult & { summary: ImportSummary };
@@ -40,31 +40,29 @@ function selected<T extends { id: string }>(items: T[], ids?: string[]): T[] {
   return items.filter((item) => wanted.has(item.id));
 }
 
-export function createStoriesTransfer(input: Database, circleIds?: string[]): TransferPackage {
+export function createStoriesTransfer(input: Database, clubIds?: string[]): TransferPackage {
   const source = databaseSchema.parse(input);
-  const circles = selected(source.circles, circleIds);
-  const characterIds = new Set(circles.flatMap((circle) => circle.characterIds));
+    const clubs = selected(source.clubs, clubIds);
+    const characterIds = new Set(clubs.flatMap((club) => club.characterIds));
   const characters = source.characters.filter((character) => characterIds.has(character.id));
   const folderIds = withFolderAncestors(
     source.folders,
     characters.map((character) => character.folderId),
   );
-  const typeIds = new Set(
-    circles.flatMap((circle) => circle.connections.map((edge) => edge.typeId)),
-  );
+    const typeIds = new Set(clubs.flatMap((club) => club.connections.map((edge) => edge.typeId)));
   return transferSchema.parse({
     format: 'krugi-transfer',
     version: 1,
     kind: 'stories',
     data: {
-      version: 3,
-      circles,
+        version: 4,
+        clubs,
       characters,
       folders: source.folders.filter((folder) => folderIds.has(folder.id)),
       relationTypes: source.relationTypes.filter((type) => typeIds.has(type.id)),
-      activeCircleId: circles.some((circle) => circle.id === source.activeCircleId)
-        ? source.activeCircleId
-        : circles[0]?.id || null,
+        activeClubId: clubs.some((club) => club.id === source.activeClubId)
+            ? source.activeClubId
+            : clubs[0]?.id || null,
     },
   });
 }
@@ -135,7 +133,7 @@ const characterKey = (c: Database['characters'][number]) =>
       : null,
   ]);
 const relationKey = (t: Database['relationTypes'][number]) => JSON.stringify([t.name, t.color]);
-const circleKey = (c: Database['circles'][number]) =>
+const clubKey = (c: Database['clubs'][number]) =>
   JSON.stringify([
     c.name,
     c.description,
@@ -158,7 +156,7 @@ export function mergeTransfer(
     characters: 0,
     folders: 0,
     relationTypes: 0,
-    circles: 0,
+      clubs: 0,
     reused: 0,
   };
   const folderMap = new Map<string, string>();
@@ -184,7 +182,7 @@ export function mergeTransfer(
     current: T[],
     imported: T[],
     key: (item: T) => string,
-    count: 'characters' | 'relationTypes' | 'circles',
+    count: 'characters' | 'relationTypes' | 'clubs',
   ) {
     const map = new Map<string, string>();
     const claimed = new Set<string>();
@@ -238,26 +236,24 @@ export function mergeTransfer(
     relationKey,
     'relationTypes',
   );
-  const circleMap = mergeItems(
-    data.circles,
-    incoming.circles.map((circle) => ({
-      ...circle,
-      characterIds: circle.characterIds.map((id) => characterMap.get(id)!),
-      connections: circle.connections.map((edge) => ({
+    const clubMap = mergeItems(
+        data.clubs,
+        incoming.clubs.map((club) => ({
+            ...club,
+            characterIds: club.characterIds.map((id) => characterMap.get(id)!),
+            connections: club.connections.map((edge) => ({
         ...edge,
         sourceId: characterMap.get(edge.sourceId)!,
         targetId: characterMap.get(edge.targetId)!,
         typeId: typeMap.get(edge.typeId)!,
       })),
     })),
-    circleKey,
-    'circles',
+        clubKey,
+        'clubs',
   );
-  if (!data.activeCircleId)
-    data.activeCircleId =
-      (incoming.activeCircleId && circleMap.get(incoming.activeCircleId)) ||
-      data.circles[0]?.id ||
-      null;
+    if (!data.activeClubId)
+        data.activeClubId =
+            (incoming.activeClubId && clubMap.get(incoming.activeClubId)) || data.clubs[0]?.id || null;
   const merged = databaseSchema.safeParse(data);
   if (!merged.success) throw new Error(tr('errors.mergedLibraryInvalid'));
   return { data: merged.data, summary };
@@ -273,7 +269,7 @@ function availableId(id: string, items: { id: string }[]): string {
 export function describeImport(summary: ImportSummary): string {
   return tr(
     'transfer.importSummary',
-    summary.circles,
+      summary.clubs,
     summary.characters,
     summary.folders,
     summary.relationTypes,

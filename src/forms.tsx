@@ -1,22 +1,22 @@
-import { tr, getLocale } from '../shared/i18n';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRight, ImagePlus, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import {getLocale, tr} from '../shared/i18n';
+import {type FormEvent, useEffect, useRef, useState} from 'react';
+import {ArrowRight, ImagePlus, Pencil, Plus, Search, Trash2, X} from 'lucide-react';
 import {
-  COLORS,
-  hasDuplicateConnection,
-  type Character,
-  type CharacterFolder,
-  type Circle,
-  type Connection,
-  type Database,
-  type Portrait,
-  type RelationType,
+    type Character,
+    type CharacterFolder,
+    type Club,
+    COLORS,
+    type Connection,
+    type Database,
+    hasDuplicateConnection,
+    type Portrait,
+    type RelationType,
 } from '../shared/model';
-import { Avatar, ColorPicker, EmptyHint, Field } from './components';
-import { defaultPortraitTransform, readPortrait } from './portrait';
-import { PortraitEditor } from './PortraitEditor';
-import { folderEntries, folderSubtree } from '../shared/folders';
-import { sortByName } from './sorting';
+import {Avatar, ColorPicker, EmptyHint, Field} from './components';
+import {defaultPortraitTransform, readPortrait} from './portrait';
+import {PortraitEditor} from './PortraitEditor';
+import {folderEntries, folderSubtree} from '../shared/folders';
+import {sortByName} from './sorting';
 
 type Actions = { onClose: () => void };
 function FormError({ error }: { error: string }) {
@@ -47,13 +47,13 @@ export function CharacterForm({
   character,
   onSave,
   onClose,
-  canAddToCircle,
+                                  canAddToClub,
   folders,
   initialFolderId = null,
 }: Actions & {
   character?: Character;
   onSave: (character: Character, add: boolean) => void;
-  canAddToCircle: boolean;
+    canAddToClub: boolean;
   folders: CharacterFolder[];
   initialFolderId?: string | null;
 }) {
@@ -66,7 +66,7 @@ export function CharacterForm({
   const [folderId, setFolderId] = useState<string | null>(
     character ? character.folderId : initialFolderId,
   );
-  const [add, setAdd] = useState(canAddToCircle && !character);
+    const [add, setAdd] = useState(canAddToClub && !character);
   const [error, setError] = useState('');
   const [reading, setReading] = useState(false);
   const form = useRef<HTMLFormElement>(null);
@@ -215,7 +215,7 @@ export function CharacterForm({
           rows={3}
         />
       </Field>
-      {!character && canAddToCircle && (
+        {!character && canAddToClub && (
         <label className="checkbox-row">
           <input type="checkbox" checked={add} onChange={(e) => setAdd(e.target.checked)} />
           <span>{tr('characters.addImmediately')}</span>
@@ -374,53 +374,53 @@ export function TypeForm({
   );
 }
 
-export function CircleForm({
-  circle,
+export function ClubForm({
+                             club,
   onSave,
   onClose,
-}: Actions & { circle?: Circle; onSave: (circle: Circle) => void }) {
-  const [name, setName] = useState(circle?.name || '');
-  const [description, setDescription] = useState(circle?.description || '');
+                         }: Actions & { club?: Club; onSave: (club: Club) => void }) {
+    const [name, setName] = useState(club?.name || '');
+    const [description, setDescription] = useState(club?.description || '');
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (name.trim())
           onSave({
-            id: circle?.id || crypto.randomUUID(),
+              id: club?.id || crypto.randomUUID(),
             name: name.trim(),
             description: description.trim(),
-            characterIds: circle?.characterIds || [],
-            connections: circle?.connections || [],
+              characterIds: club?.characterIds || [],
+              connections: club?.connections || [],
           });
       }}
     >
-      <Field label={tr('circles.nameLabel')}>
+        <Field label={tr('clubs.nameLabel')}>
         <input
           maxLength={80}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={tr('circles.namePlaceholder')}
+          placeholder={tr('clubs.namePlaceholder')}
           required
         />
       </Field>
-      <Field label={tr('forms.descriptionLabel')} hint={tr('circles.descriptionHint')}>
+        <Field label={tr('forms.descriptionLabel')} hint={tr('clubs.descriptionHint')}>
         <textarea
           maxLength={2000}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder={tr('circles.descriptionPlaceholder')}
+          placeholder={tr('clubs.descriptionPlaceholder')}
           rows={3}
         />
       </Field>
-      <Footer onClose={onClose} label={circle ? tr('actions.saveChanges') : tr('circles.create')} />
+        <Footer onClose={onClose} label={club ? tr('actions.saveChanges') : tr('clubs.create')}/>
     </form>
   );
 }
 
 export function ConnectionForm({
   connection,
-  circle,
+                                   club,
   data,
   sourceId,
   targetId,
@@ -429,7 +429,7 @@ export function ConnectionForm({
   onNewType,
 }: Actions & {
   connection?: Connection;
-  circle: Circle;
+    club: Club;
   data: Database;
   sourceId?: string;
   targetId?: string;
@@ -437,12 +437,12 @@ export function ConnectionForm({
   onNewType: () => void;
 }) {
   const [source, setSource] = useState(
-    connection?.sourceId || sourceId || circle.characterIds[0] || '',
+      connection?.sourceId || sourceId || club.characterIds[0] || '',
   );
   const [target, setTarget] = useState(
     connection?.targetId ||
       targetId ||
-      circle.characterIds.find((id) => id !== (sourceId || circle.characterIds[0])) ||
+      club.characterIds.find((id) => id !== (sourceId || club.characterIds[0])) ||
       '',
   );
   const [type, setType] = useState(connection?.typeId || data.relationTypes[0]?.id || '');
@@ -450,7 +450,7 @@ export function ConnectionForm({
   const [notes, setNotes] = useState(connection?.notes || '');
   const [error, setError] = useState('');
   const memberOptions = sortByName(
-    data.characters.filter((character) => circle.characterIds.includes(character.id)),
+      data.characters.filter((character) => club.characterIds.includes(character.id)),
   ).map((character) => (
     <option key={character.id} value={character.id}>
       {character.name}
@@ -476,7 +476,7 @@ export function ConnectionForm({
           directed,
           notes: notes.trim(),
         };
-        if (hasDuplicateConnection(circle, edge)) {
+          if (hasDuplicateConnection(club, edge)) {
           setError(tr('validation.duplicateConnectionHint'));
           return;
         }
@@ -534,7 +534,7 @@ export function ConnectionForm({
       <FormError error={error} />
       <Footer
         onClose={onClose}
-        disabled={circle.characterIds.length < 2 || !data.relationTypes.length}
+        disabled={club.characterIds.length < 2 || !data.relationTypes.length}
         label={connection ? tr('actions.saveChanges') : tr('connections.add')}
       />
     </form>
@@ -542,20 +542,20 @@ export function ConnectionForm({
 }
 
 export function ParticipantsForm({
-  circle,
+                                     club,
   characters,
   folders,
   onSave,
   onClose,
   onNewCharacter,
 }: Actions & {
-  circle: Circle;
+    club: Club;
   characters: Character[];
   folders: CharacterFolder[];
   onSave: (ids: string[]) => void;
   onNewCharacter: () => void;
 }) {
-  const [selected, setSelected] = useState(new Set(circle.characterIds));
+    const [selected, setSelected] = useState(new Set(club.characterIds));
   const [search, setSearch] = useState('');
   const [folderFilter, setFolderFilter] = useState('');
   const subtree =
@@ -588,9 +588,9 @@ export function ParticipantsForm({
       onSubmit={(e) => {
         e.preventDefault();
         onSave([
-          ...circle.characterIds.filter((id) => selected.has(id)),
+            ...club.characterIds.filter((id) => selected.has(id)),
           ...characters
-            .filter((c) => selected.has(c.id) && !circle.characterIds.includes(c.id))
+              .filter((c) => selected.has(c.id) && !club.characterIds.includes(c.id))
             .map((c) => c.id),
         ]);
       }}
@@ -666,7 +666,7 @@ export function ParticipantsForm({
         <Plus size={16} />
         {tr('characters.createNew')}
       </button>
-      {circle.characterIds.some((id) => !selected.has(id)) && (
+        {club.characterIds.some((id) => !selected.has(id)) && (
         <p className="field-hint">
           <Trash2 size={12} />
           {tr('members.removalHint')}
