@@ -275,7 +275,7 @@ export default function CharacterLibrary({
           </span>
         </div>
         {visibleGroups
-          .filter((group) => group.matches.length)
+          .filter((group) => group.matches.length || (!search && total > 0))
           .map((group) => (
             <section
               className="character-folder-group"
@@ -333,7 +333,7 @@ export default function CharacterLibrary({
                   </article>
                 ))}
               </div>
-              {!group.matches.length && <EmptyHint>{tr('folders.noCharactersHint')}</EmptyHint>}
+              {!group.characters.length && <EmptyHint>{tr('folders.noCharactersHint')}</EmptyHint>}
             </section>
           ))}
         {!total && !search && (

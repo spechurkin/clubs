@@ -164,6 +164,10 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
     .getByRole('button', { name: russianText('folders.create'), exact: true })
     .click();
   await createChild(russianText('samples.otherWorld'), russianText('demo.relationships.family'));
+  await expect(
+    page.getByRole('heading', { name: russianText('folders.emptyHeading') }),
+  ).toBeVisible();
+  await expect(page.locator('.character-folder-group')).toHaveCount(0);
   // The same name is allowed in another branch but not beside an existing sibling.
   await page
     .getByRole('button', {
@@ -190,6 +194,23 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
     .locator('.folder-panel')
     .getByRole('button', { name: new RegExp('^' + russianText('characters.all'), '') })
     .click();
+  const emptyGroup = page.getByRole('region', {
+    name: russianText('folders.groupLabel', russianText('samples.otherWorld')),
+    exact: true,
+  });
+  await expect(emptyGroup.getByText(russianText('folders.noCharactersHint'))).toBeVisible();
+  const search = page.getByRole('textbox', { name: russianText('characters.searchLabel') });
+  await search.fill(russianText('demo.nora.name'));
+  await expect(page.locator('.character-folder-group')).toHaveCount(1);
+  await expect(
+    page.getByText(russianText('folders.noCharactersHint'), { exact: true }),
+  ).toHaveCount(0);
+  await search.fill('no-matching-character');
+  await expect(
+    page.getByText(russianText('characters.noSearchResults'), { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.character-folder-group')).toHaveCount(0);
+  await search.fill('');
   await moveCharacter(russianText('demo.nora.name'), russianText('samples.worldFamilyMainPath'));
   await moveCharacter(russianText('demo.mira.name'), russianText('samples.worldFamilyAlliesPath'));
   await selectFolder(russianText('samples.worldFamilyMainPath'));
