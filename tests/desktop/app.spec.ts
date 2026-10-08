@@ -1,5 +1,11 @@
 import { russianText } from '../russian-fixtures';
-import { _electron as electron, type ElectronApplication, expect, type Page, test } from '@playwright/test';
+import {
+  _electron as electron,
+  type ElectronApplication,
+  expect,
+  type Page,
+  test,
+} from '@playwright/test';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { demoDatabase } from '../../src/demo';
@@ -878,7 +884,7 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
       exact: true,
     }),
   ).toBeVisible();
-};);
+});
 
 test('alphabetical lists preserve saved club order and geometry while manual ring reordering still works', async () => {
   const directory = path.join(root, '.test-data', 'alphabetical');
