@@ -4,12 +4,12 @@ import path from 'node:path';
 import { prepareRelease } from './prepare-release.mjs';
 
 export async function publishRelease({
-  github,
-  context,
-  core,
-  version,
-  directory = 'release-assets',
-}) {
+                                       github,
+                                       context,
+                                       core,
+                                       version,
+                                       directory = 'release-assets',
+                                     }) {
   const tag = `v${version}`;
   if (
     context.ref !== `refs/tags/${tag}` ||

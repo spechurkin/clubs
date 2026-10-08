@@ -1,9 +1,9 @@
-import { tr, isLocale } from '../shared/i18n';
+import { isLocale, tr } from '../shared/i18n';
 import {
-  databaseSchema,
-  emptyDatabase,
-  type DesktopAPI,
   type Database,
+  databaseSchema,
+  type DesktopAPI,
+  emptyDatabase,
   type ExportFormat,
   type LoadResult,
 } from '../shared/model';

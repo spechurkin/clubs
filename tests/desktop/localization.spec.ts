@@ -1,8 +1,14 @@
-import {russianText} from '../russian-fixtures';
-import {_electron as electron, type ElectronApplication, expect, type Page, test,} from '@playwright/test';
-import {mkdir, mkdtemp, readFile} from 'node:fs/promises';
+import { russianText } from '../russian-fixtures';
+import {
+  _electron as electron,
+  type ElectronApplication,
+  expect,
+  type Page,
+  test,
+} from '@playwright/test';
+import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import packageMetadata from '../../package.json' with {type: 'json'};
+import packageMetadata from '../../package.json' with { type: 'json' };
 
 const root = process.cwd();
 let app: ElectronApplication;
@@ -14,10 +20,10 @@ async function launch(directory: string) {
       ([key, value]) => value !== undefined && key !== 'ELECTRON_RUN_AS_NODE',
     ),
   ) as Record<string, string>;
-    env.CLUB_DATA_DIR = directory;
+  env.CLUB_DATA_DIR = directory;
   app = await electron.launch({
-      executablePath: process.env.CLUB_TEST_EXECUTABLE,
-      args: process.env.CLUB_TEST_EXECUTABLE ? [] : [root],
+    executablePath: process.env.CLUB_TEST_EXECUTABLE,
+    args: process.env.CLUB_TEST_EXECUTABLE ? [] : [root],
     env,
   });
   page = await app.firstWindow();
@@ -40,12 +46,12 @@ test('English default, live language switching, native dialog text and shared li
   expect(
     await app.evaluate(({ app }) => ({ name: app.getName(), version: app.getVersion() })),
   ).toEqual({ name: 'Clubs', version: packageMetadata.version });
-    await expect(page.locator('.version')).toHaveText(`v${packageMetadata.version}`);
+  await expect(page.locator('.version')).toHaveText(`v${packageMetadata.version}`);
 
   await page.getByRole('button', { name: 'Explore an example', exact: true }).click();
   await expect(page.locator('.save-status')).toHaveText('All changes saved');
   await expect(page.getByTestId('diagram').locator('.diagram-node')).toHaveCount(6);
-    await expect(page.locator('.club-list-item')).toContainText('House by the Lake');
+  await expect(page.locator('.club-list-item')).toContainText('House by the Lake');
   await expect(
     page.getByRole('button', { name: 'Character: Nora West', exact: true }),
   ).toBeVisible();
@@ -115,8 +121,8 @@ test('English default, live language switching, native dialog text and shared li
   );
   await mkdir(path.join(root, 'test-results'), { recursive: true });
   await page.screenshot({ path: path.join(root, 'test-results', 'clubs-english-settings.png') });
-    await page.locator('.rail-links').getByRole('button', {name: 'Clubs', exact: true}).click();
-    await page.screenshot({path: path.join(root, 'test-results', 'clubs-english-club.png')});
+  await page.locator('.rail-links').getByRole('button', { name: 'Clubs', exact: true }).click();
+  await page.screenshot({ path: path.join(root, 'test-results', 'clubs-english-club.png') });
   expect(errors).toEqual([]);
 
   await app.close();

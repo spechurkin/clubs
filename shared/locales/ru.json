@@ -387,6 +387,7 @@
   "validation.characterFolderMissing": "Папка персонажа не найдена",
   "validation.characterNameRequired": "Введите имя персонажа",
   "validation.characterTransferContent": "Файл персонажей не должен содержать истории и отношения",
+  "validation.clubLimit": "В библиотеке может быть не больше {0} кружков",
   "validation.clubMembersInvalid": "Некорректные участники кружка",
   "validation.connectionExists": "Такая связь уже существует",
   "validation.connectionInvalid": "Некорректная связь",

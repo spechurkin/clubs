@@ -1,5 +1,5 @@
-import {formatClubCount, getLocale, tr} from '../shared/i18n';
-import {useEffect, useState} from 'react';
+import { formatClubCount, getLocale, tr } from '../shared/i18n';
+import { useEffect, useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -12,10 +12,10 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import {Avatar, EmptyHint} from './components';
-import type {Character, CharacterFolder, Database} from '../shared/model';
-import {folderEntries, folderSubtree, folderTrail} from '../shared/folders';
-import {sortByName} from './sorting';
+import { Avatar, EmptyHint } from './components';
+import type { Character, CharacterFolder, Database } from '../shared/model';
+import { folderEntries, folderSubtree, folderTrail } from '../shared/folders';
+import { sortByName } from './sorting';
 
 type Props = {
   data: Database;
@@ -315,8 +315,8 @@ export default function CharacterLibrary({
                     <div className="card-bottom">
                       <span>
                         {formatClubCount(
-                            data.clubs.filter((club) => club.characterIds.includes(character.id))
-                                .length,
+                          data.clubs.filter((club) => club.characterIds.includes(character.id))
+                            .length,
                         )}
                       </span>
                       <button

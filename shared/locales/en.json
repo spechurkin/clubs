@@ -387,6 +387,7 @@
   "validation.characterFolderMissing": "Character folder not found",
   "validation.characterNameRequired": "Enter a character name",
   "validation.characterTransferContent": "A character file must not contain stories or relationships",
+  "validation.clubLimit": "The library can contain no more than {0} clubs",
   "validation.clubMembersInvalid": "Invalid club members",
   "validation.connectionExists": "This connection already exists",
   "validation.connectionInvalid": "Invalid connection",

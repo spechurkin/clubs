@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { isLocale, tr, type Locale } from '../shared/i18n';
+import { isLocale, type Locale, tr } from '../shared/i18n';
 
 const filename = 'preferences.json';
 

@@ -1,7 +1,7 @@
 import { tr } from '../shared/i18n';
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { Check, X } from 'lucide-react';
-import { COLORS, type Character } from '../shared/model';
+import { type Character, COLORS } from '../shared/model';
 import { initials } from './geometry';
 
 export function Avatar({

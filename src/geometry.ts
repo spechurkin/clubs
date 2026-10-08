@@ -1,5 +1,5 @@
-import type {Connection} from '../shared/model';
-import {getLocale} from '../shared/i18n';
+import type { Connection } from '../shared/model';
+import { getLocale } from '../shared/i18n';
 
 export type Point = { x: number; y: number };
 export const CENTER = { x: 460, y: 410 };
@@ -10,7 +10,7 @@ export function clubRadius(count: number) {
 }
 
 export function diagramBounds(count: number, legendCount = 0) {
-    const radius = clubRadius(count);
+  const radius = clubRadius(count);
   const halfWidth = Math.max(460, radius + 120);
   const halfHeight = Math.max(410, radius + 95);
   const legendHeight = Math.max(0, Math.ceil(legendCount / 4) - 1) * 20;
@@ -24,7 +24,7 @@ export function diagramBounds(count: number, legendCount = 0) {
 }
 
 export function clubPositions(ids: string[]): Map<string, Point> {
-    const radius = clubRadius(ids.length);
+  const radius = clubRadius(ids.length);
   return new Map(
     ids.map((id, index) => {
       const angle = -Math.PI / 2 + (index / ids.length) * Math.PI * 2;

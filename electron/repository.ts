@@ -1,14 +1,16 @@
 import { tr } from '../shared/i18n';
 import { copyFile, mkdir, open, readFile, rename, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { databaseSchema, emptyDatabase, type Database, type LoadResult } from '../shared/model';
+import { type Database, databaseSchema, emptyDatabase, type LoadResult } from '../shared/model';
 
 const MAX_BYTES = 150 * 1024 * 1024;
+
 export class Repository {
   readonly file: string;
   private queue: Promise<void> = Promise.resolve();
   private initialized = false;
   private primaryValid = false;
+
   constructor(readonly directory: string) {
     this.file = path.join(directory, 'library.json');
   }

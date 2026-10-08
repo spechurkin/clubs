@@ -1,8 +1,10 @@
-import type {Locale} from './i18n';
-import {tr} from './i18n';
-import {z} from 'zod';
-import type {TransferImportResult, TransferPackage} from './transfer';
-import {folderSubtree} from './folders';
+import type { Locale } from './i18n';
+import { tr } from './i18n';
+import { z } from 'zod';
+import type { TransferImportResult, TransferPackage } from './transfer';
+import { folderSubtree } from './folders';
+
+export const MAX_CLUBS = 100;
 
 export const COLORS = [
   '#80c7b7',
@@ -75,12 +77,14 @@ export const clubSchema = z
   .strict();
 const currentDatabaseSchema = z
   .object({
-      version: z.literal(4),
+    version: z.literal(4),
     characters: z.array(characterSchema).max(5000),
     folders: z.array(characterFolderSchema).max(500),
     relationTypes: z.array(relationTypeSchema).max(200),
-      clubs: z.array(clubSchema).max(500),
-      activeClubId: id.nullable(),
+    clubs: z
+      .array(clubSchema)
+      .max(MAX_CLUBS, { error: () => tr('validation.clubLimit', MAX_CLUBS) }),
+    activeClubId: id.nullable(),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -90,7 +94,7 @@ const currentDatabaseSchema = z
       !unique(data.characters.map((c) => c.id)) ||
       !unique(data.folders.map((folder) => folder.id)) ||
       !unique(data.relationTypes.map((t) => t.id)) ||
-        !unique(data.clubs.map((c) => c.id))
+      !unique(data.clubs.map((c) => c.id))
     )
       issue(tr('validation.duplicateIds'));
     const characters = new Set(data.characters.map((c) => c.id));
@@ -125,15 +129,15 @@ const currentDatabaseSchema = z
       }
     }
     const types = new Set(data.relationTypes.map((t) => t.id));
-      if (data.activeClubId && !data.clubs.some((c) => c.id === data.activeClubId))
-          issue(tr('validation.activeClubMissing'));
-      for (const club of data.clubs) {
-          const members = new Set(club.characterIds);
-          if (!unique(club.characterIds) || club.characterIds.some((c) => !characters.has(c)))
-              issue(tr('validation.clubMembersInvalid'));
-          if (!unique(club.connections.map((c) => c.id))) issue(tr('validation.duplicateConnections'));
+    if (data.activeClubId && !data.clubs.some((c) => c.id === data.activeClubId))
+      issue(tr('validation.activeClubMissing'));
+    for (const club of data.clubs) {
+      const members = new Set(club.characterIds);
+      if (!unique(club.characterIds) || club.characterIds.some((c) => !characters.has(c)))
+        issue(tr('validation.clubMembersInvalid'));
+      if (!unique(club.connections.map((c) => c.id))) issue(tr('validation.duplicateConnections'));
       const signatures = new Set<string>();
-          for (const connection of club.connections) {
+      for (const connection of club.connections) {
         if (
           !members.has(connection.sourceId) ||
           !members.has(connection.targetId) ||
@@ -154,26 +158,26 @@ const currentDatabaseSchema = z
 // Normalize previous library formats in every load/import path.
 export const databaseSchema = z.preprocess((input) => {
   if (
-      typeof input !== 'object' ||
-      input === null ||
-      !('version' in input) ||
-      ![1, 2, 3].includes(input.version as number) ||
-      (input.version === 1 && 'folders' in input)
+    typeof input !== 'object' ||
+    input === null ||
+    !('version' in input) ||
+    ![1, 2, 3].includes(input.version as number) ||
+    (input.version === 1 && 'folders' in input)
   )
-      return input;
-    const previous = input as Record<string, unknown>;
-    const migrated: Record<string, unknown> = {
-        ...previous,
-        version: 4,
-        ...(previous.version === 1 ? {folders: []} : {}),
-    };
-    // Legacy field names are accepted only here; mixed formats remain invalid.
-    if ('circles' in previous || 'activeCircleId' in previous) {
-        if ('clubs' in previous || 'activeClubId' in previous) return input;
-        const {circles, activeCircleId, ...rest} = migrated;
-        return {...rest, clubs: circles, activeClubId: activeCircleId};
-    }
-    return migrated;
+    return input;
+  const previous = input as Record<string, unknown>;
+  const migrated: Record<string, unknown> = {
+    ...previous,
+    version: 4,
+    ...(previous.version === 1 ? { folders: [] } : {}),
+  };
+  // Legacy field names are accepted only here; mixed formats remain invalid.
+  if ('circles' in previous || 'activeCircleId' in previous) {
+    if ('clubs' in previous || 'activeClubId' in previous) return input;
+    const { circles, activeCircleId, ...rest } = migrated;
+    return { ...rest, clubs: circles, activeClubId: activeCircleId };
+  }
+  return migrated;
 }, currentDatabaseSchema);
 
 export type Character = z.infer<typeof characterSchema>;
@@ -185,27 +189,37 @@ export type Club = z.infer<typeof clubSchema>;
 export type Database = z.infer<typeof databaseSchema>;
 export type LoadResult = { data: Database; path: string; warning?: string };
 export type ExportFormat = 'png' | 'svg';
+
 export interface DesktopAPI {
   getLanguage(): Promise<Locale>;
+
   setLanguage(locale: Locale): Promise<void>;
+
   load(): Promise<LoadResult>;
+
   save(data: Database): Promise<void>;
+
   exportBackup(data: Database): Promise<boolean>;
+
   importBackup(): Promise<LoadResult | null>;
+
   exportTransfer(file: TransferPackage, name: string): Promise<boolean>;
+
   importTransfer(): Promise<TransferImportResult | null>;
+
   exportDiagram(name: string, format: ExportFormat, content: string): Promise<boolean>;
+
   showDataFolder(): Promise<void>;
 }
 
 export function emptyDatabase(): Database {
   return {
-      version: 4,
+    version: 4,
     characters: [],
     folders: [],
     relationTypes: [],
-      clubs: [],
-      activeClubId: null,
+    clubs: [],
+    activeClubId: null,
   };
 }
 
@@ -228,7 +242,7 @@ export function deleteCharacter(data: Database, characterId: string): Database {
   return {
     ...data,
     characters: data.characters.filter((c) => c.id !== characterId),
-      clubs: data.clubs.map((c) => ({
+    clubs: data.clubs.map((c) => ({
       ...c,
       characterIds: c.characterIds.filter((id) => id !== characterId),
       connections: c.connections.filter(
@@ -240,9 +254,9 @@ export function deleteCharacter(data: Database, characterId: string): Database {
 
 export function removeFromClub(club: Club, characterId: string): Club {
   return {
-      ...club,
-      characterIds: club.characterIds.filter((id) => id !== characterId),
-      connections: club.connections.filter(
+    ...club,
+    characterIds: club.characterIds.filter((id) => id !== characterId),
+    connections: club.connections.filter(
       (e) => e.sourceId !== characterId && e.targetId !== characterId,
     ),
   };
@@ -252,7 +266,7 @@ export function deleteRelationType(data: Database, typeId: string): Database {
   return {
     ...data,
     relationTypes: data.relationTypes.filter((t) => t.id !== typeId),
-      clubs: data.clubs.map((c) => ({
+    clubs: data.clubs.map((c) => ({
       ...c,
       connections: c.connections.filter((e) => e.typeId !== typeId),
     })),
@@ -260,7 +274,7 @@ export function deleteRelationType(data: Database, typeId: string): Database {
 }
 
 export function hasDuplicateConnection(club: Club, edge: Connection): boolean {
-    return club.connections.some(
+  return club.connections.some(
     (e) =>
       e.id !== edge.id &&
       e.typeId === edge.typeId &&

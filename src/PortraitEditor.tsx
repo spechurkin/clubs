@@ -1,5 +1,5 @@
 import { tr } from '../shared/i18n';
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { type PointerEvent, useEffect, useRef, useState } from 'react';
 import { FlipHorizontal2, RotateCcw, RotateCw, Undo2 } from 'lucide-react';
 import type { Portrait } from '../shared/model';
 import {
@@ -7,9 +7,9 @@ import {
   defaultPortraitTransform,
   drawPortrait,
   loadPortraitImage,
+  type PortraitTransform,
   renderPortrait,
   rotatePortraitTransform,
-  type PortraitTransform,
 } from './portrait';
 
 export function PortraitEditor({

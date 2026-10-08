@@ -1,6 +1,13 @@
-import {getLocale, isLocale, setLocale, subscribeLocale, tr} from '../shared/i18n';
-import {version as appVersion} from '../package.json';
-import {type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore,} from 'react';
+import { getLocale, isLocale, setLocale, subscribeLocale, tr } from '../shared/i18n';
+import { version as appVersion } from '../package.json';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -43,6 +50,7 @@ import {
   deleteCharacter,
   deleteCharacterFolder,
   deleteRelationType,
+  MAX_CLUBS,
   type RelationType,
   removeFromClub,
 } from '../shared/model';
@@ -53,19 +61,26 @@ import {
   describeImport,
   type TransferPackage,
 } from '../shared/transfer';
-import {folderPath, folderSubtree} from '../shared/folders';
-import {Avatar, EmptyHint, Modal, ScrollArea} from './components';
-import {CharacterForm, ClubForm, ConnectionForm, FolderForm, ParticipantsForm, TypeForm,} from './forms';
+import { folderPath, folderSubtree } from '../shared/folders';
+import { Avatar, EmptyHint, Modal, ScrollArea } from './components';
+import {
+  CharacterForm,
+  ClubForm,
+  ConnectionForm,
+  FolderForm,
+  ParticipantsForm,
+  TypeForm,
+} from './forms';
 import CharacterLibrary from './CharacterLibrary';
 import Diagram from './Diagram';
-import {demoDatabase} from './demo';
-import {storage} from './storage';
-import {useLibrary} from './useLibrary';
-import {sortByName, sortConnections} from './sorting';
+import { demoDatabase } from './demo';
+import { storage } from './storage';
+import { useLibrary } from './useLibrary';
+import { sortByName, sortConnections } from './sorting';
 
 type View = 'clubs' | 'characters' | 'relations' | 'settings';
 type Editor = {
-    kind: 'character' | 'folder' | 'type' | 'club' | 'participants' | 'connection';
+  kind: 'character' | 'folder' | 'type' | 'club' | 'participants' | 'connection';
   id?: string;
   sourceId?: string;
   targetId?: string;
@@ -84,6 +99,7 @@ function OrbitMark({ size = 32 }: { size?: number }) {
     </svg>
   );
 }
+
 function Count({ children }: { children: ReactNode }) {
   return <span className="count">{children}</span>;
 }
@@ -96,7 +112,7 @@ export default function App() {
   }, [locale]);
   const library = useLibrary();
   const { data, commit } = library;
-    const [view, setView] = useState<View>('clubs');
+  const [view, setView] = useState<View>('clubs');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<string>();
@@ -109,46 +125,46 @@ export default function App() {
   const [labels, setLabels] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-    const attachDiagramWheel = useCallback((viewport: HTMLDivElement | null) => {
-        if (!viewport) return;
-        const wheel = (event: WheelEvent) => {
-            event.preventDefault();
-            const deltaX =
-                event.deltaX *
-                (event.deltaMode === WheelEvent.DOM_DELTA_LINE
-                    ? 16
-                    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-                        ? viewport.clientWidth
-                        : 1);
-            const deltaY =
-                event.deltaY *
-                (event.deltaMode === WheelEvent.DOM_DELTA_LINE
-                    ? 16
-                    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-                        ? viewport.clientHeight
-                        : 1);
-            if (event.ctrlKey || event.metaKey) {
-                setZoom((current) => Math.max(0.5, Math.min(2.5, current * Math.exp(-deltaY * 0.002))));
-                return;
-            }
-            const horizontal = event.shiftKey && deltaX === 0;
-            setPan((current) => ({
-                x: current.x - (horizontal ? deltaY : deltaX),
-                y: current.y - (horizontal ? 0 : deltaY),
-            }));
-        };
-        // Cancel native scrolling and browser zoom only over the diagram.
-        viewport.addEventListener('wheel', wheel, {passive: false});
-        return () => viewport.removeEventListener('wheel', wheel);
-    }, []);
+  const attachDiagramWheel = useCallback((viewport: HTMLDivElement | null) => {
+    if (!viewport) return;
+    const wheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const deltaX =
+        event.deltaX *
+        (event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? 16
+          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+            ? viewport.clientWidth
+            : 1);
+      const deltaY =
+        event.deltaY *
+        (event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? 16
+          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+            ? viewport.clientHeight
+            : 1);
+      if (event.ctrlKey || event.metaKey) {
+        setZoom((current) => Math.max(0.5, Math.min(2.5, current * Math.exp(-deltaY * 0.002))));
+        return;
+      }
+      const horizontal = event.shiftKey && deltaX === 0;
+      setPan((current) => ({
+        x: current.x - (horizontal ? deltaY : deltaX),
+        y: current.y - (horizontal ? 0 : deltaY),
+      }));
+    };
+    // Cancel native scrolling and browser zoom only over the diagram.
+    viewport.addEventListener('wheel', wheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', wheel);
+  }, []);
   const [linking, setLinking] = useState(false);
   const [exportMenu, setExportMenu] = useState(false);
-    const [clubMenu, setClubMenu] = useState(false);
+  const [clubMenu, setClubMenu] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState('');
-    const club = data?.clubs.find((c) => c.id === data.activeClubId) || data?.clubs[0];
+  const club = data?.clubs.find((c) => c.id === data.activeClubId) || data?.clubs[0];
   const character = data?.characters.find((c) => c.id === selectedCharacter);
-    const edge = club?.connections.find((e) => e.id === selectedEdge);
+  const edge = club?.connections.find((e) => e.id === selectedEdge);
   const closeEditor = useCallback(() => setEditor(null), []);
   const clearSelection = () => {
     setSelectedCharacter(undefined);
@@ -162,7 +178,7 @@ export default function App() {
     setZoom(1);
     setPan({ x: 0, y: 0 });
     setLinking(false);
-      setClubMenu(false);
+    setClubMenu(false);
   }, [club?.id]);
   useEffect(() => {
     if (
@@ -186,7 +202,7 @@ export default function App() {
         clearSelection();
         setLinking(false);
         setExportMenu(false);
-          setClubMenu(false);
+        setClubMenu(false);
       }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault();
@@ -200,18 +216,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', key);
   }, [library.flush]);
 
-    const updateClub = (update: (club: Club) => Club) => {
-        if (club)
+  const updateClub = (update: (club: Club) => Club) => {
+    if (club)
       commit((data) => ({
         ...data,
-          clubs: data.clubs.map((c) => (c.id === club.id ? update(c) : c)),
+        clubs: data.clubs.map((c) => (c.id === club.id ? update(c) : c)),
       }));
   };
   const changeView = (next: View) => {
     setView(next);
     setSearch('');
     setExportMenu(false);
-      setClubMenu(false);
+    setClubMenu(false);
   };
   const newCharacter = () => setEditor({ kind: 'character' });
   const newFolder = () =>
@@ -221,7 +237,7 @@ export default function App() {
     });
   const newType = () => setEditor({ kind: 'type' });
   const newConnection = () => {
-      if (!club || club.characterIds.length < 2) {
+    if (!club || club.characterIds.length < 2) {
       setEditor({ kind: 'participants' });
       return;
     }
@@ -233,14 +249,14 @@ export default function App() {
       characters: data.characters.some((c) => c.id === character.id)
         ? data.characters.map((c) => (c.id === character.id ? character : c))
         : [...data.characters, character],
-        clubs:
-            add && club
-                ? data.clubs.map((c) =>
-                    c.id === club.id && !c.characterIds.includes(character.id)
+      clubs:
+        add && club
+          ? data.clubs.map((c) =>
+              c.id === club.id && !c.characterIds.includes(character.id)
                 ? { ...c, characterIds: [...c.characterIds, character.id] }
                 : c,
             )
-                : data.clubs,
+          : data.clubs,
     }));
     closeEditor();
     notify(tr('notifications.characterSaved'));
@@ -288,15 +304,19 @@ export default function App() {
       },
     });
   };
-    const saveClub = (next: Club) => {
+  const saveClub = (next: Club) => {
+    if (data && data.clubs.length >= MAX_CLUBS && !data.clubs.some((c) => c.id === next.id)) {
+      notify(tr('validation.clubLimit', MAX_CLUBS));
+      return;
+    }
     commit((data) => ({
       ...data,
-        clubs: data.clubs.some((c) => c.id === next.id)
-            ? data.clubs.map((c) => (c.id === next.id ? next : c))
-            : [...data.clubs, next],
-        activeClubId: next.id,
+      clubs: data.clubs.some((c) => c.id === next.id)
+        ? data.clubs.map((c) => (c.id === next.id ? next : c))
+        : [...data.clubs, next],
+      activeClubId: next.id,
     }));
-        setView('clubs');
+    setView('clubs');
     closeEditor();
   };
   const askDeleteCharacter = (character: Character) =>
@@ -362,12 +382,12 @@ export default function App() {
     }
   };
   const makeExport = async (format: 'png' | 'svg') => {
-      if (!data || !club) return;
+    if (!data || !club) return;
     setExportMenu(false);
     setBusy(true);
     try {
       const { exportDiagram } = await import('./export');
-        if (await exportDiagram(data, club, format, labels))
+      if (await exportDiagram(data, club, format, labels))
         notify(tr('notifications.diagramSaved', format.toUpperCase()));
     } catch (error) {
       notify(error instanceof Error ? error.message : tr('errors.diagramExport'));
@@ -384,13 +404,13 @@ export default function App() {
     setSelectedEdge(undefined);
   };
   const reorder = (id: string, direction: number) =>
-      updateClub((club) => {
-          const ids = [...club.characterIds];
+    updateClub((club) => {
+      const ids = [...club.characterIds];
       const index = ids.indexOf(id);
       const next = index + direction;
-          if (next < 0 || next >= ids.length) return club;
+      if (next < 0 || next >= ids.length) return club;
       [ids[index], ids[next]] = [ids[next], ids[index]];
-          return {...club, characterIds: ids};
+      return { ...club, characterIds: ids };
     });
 
   if (!data)
@@ -400,7 +420,7 @@ export default function App() {
         <h1>{tr('app.name')}</h1>
         {library.status === 'loading' ? (
           <>
-              <LoadingIcon className="spin" size={24}/>
+            <LoadingIcon className="spin" size={24} />
             <p>{tr('library.opening')}</p>
           </>
         ) : (
@@ -421,20 +441,20 @@ export default function App() {
 
   const relationTypes = sortByName(data.relationTypes);
   const members = sortByName(
-      data.characters.filter((character) => club?.characterIds.includes(character.id)),
+    data.characters.filter((character) => club?.characterIds.includes(character.id)),
   );
-    const connections = sortConnections(club?.connections || [], data);
+  const connections = sortConnections(club?.connections || [], data);
   const title =
-      view === 'clubs'
-          ? club?.name || tr('clubs.emptyTitle')
+    view === 'clubs'
+      ? club?.name || tr('clubs.emptyTitle')
       : view === 'characters'
         ? tr('characters.libraryTitle')
         : view === 'relations'
           ? tr('relationships.paletteTitle')
           : tr('settings.title');
   const subtitle =
-      view === 'clubs'
-          ? club?.description || tr('clubs.subtitle')
+    view === 'clubs'
+      ? club?.description || tr('clubs.subtitle')
       : view === 'characters'
         ? tr('characters.subtitle')
         : view === 'relations'
@@ -454,7 +474,7 @@ export default function App() {
         <div className="rail-links">
           {(
             [
-                ['clubs', ClubDot, tr('navigation.clubs')],
+              ['clubs', ClubDot, tr('navigation.clubs')],
               ['characters', Users, tr('navigation.characters')],
               ['relations', Link2, tr('navigation.relationships')],
             ] as const
@@ -481,7 +501,7 @@ export default function App() {
             <Settings2 size={21} />
             <span>{tr('navigation.settings')}</span>
           </button>
-            <span className="version">v{appVersion}</span>
+          <span className="version">v{appVersion}</span>
         </div>
       </nav>
 
@@ -494,24 +514,29 @@ export default function App() {
           <span className="brand-caption">{tr('app.tagline')}</span>
         </div>
         <div className="section-heading">
-            <span>{tr('clubs.sidebarHeading')}</span>
-            <Count>{data.clubs.length}</Count>
+          <span>{tr('clubs.sidebarHeading')}</span>
+          <Count>{data.clubs.length}</Count>
         </div>
-          <button className="button new-club" onClick={() => setEditor({kind: 'club'})}>
+        <button
+          className="button new-club"
+          disabled={data.clubs.length >= MAX_CLUBS}
+          title={data.clubs.length >= MAX_CLUBS ? tr('validation.clubLimit', MAX_CLUBS) : undefined}
+          onClick={() => setEditor({ kind: 'club' })}
+        >
           <Plus size={17} />
-              {tr('clubs.new')}
+          {tr('clubs.new')}
         </button>
-          <div className="club-list">
-              {data.clubs.map((c) => (
+        <div className="club-list">
+          {data.clubs.map((c) => (
             <button
-                className={`club-list-item ${c.id === club?.id && view === 'clubs' ? 'active' : ''}`}
+              className={`club-list-item ${c.id === club?.id && view === 'clubs' ? 'active' : ''}`}
               key={c.id}
               onClick={() => {
-                  commit((data) => ({...data, activeClubId: c.id}));
-                  changeView('clubs');
+                commit((data) => ({ ...data, activeClubId: c.id }));
+                changeView('clubs');
               }}
             >
-                <ClubIcon size={17}/>
+              <ClubIcon size={17} />
               <span>
                 <strong>{c.name}</strong>
                 <small>
@@ -521,10 +546,10 @@ export default function App() {
                   {tr('counts.connectionsSuffix')}
                 </small>
               </span>
-                {c.id === club?.id && view === 'clubs' && <ChevronRight size={15}/>}
+              {c.id === club?.id && view === 'clubs' && <ChevronRight size={15} />}
             </button>
           ))}
-              {!data.clubs.length && <p className="sidebar-hint">{tr('clubs.sidebarHint')}</p>}
+          {!data.clubs.length && <p className="sidebar-hint">{tr('clubs.sidebarHint')}</p>}
         </div>
         <div className="sidebar-relations">
           <div className="section-heading">
@@ -594,8 +619,8 @@ export default function App() {
             <div className="breadcrumb">
               {tr('navigation.workspaceHeading')}
               <span>/</span>
-                {view === 'clubs'
-                    ? tr('navigation.clubsHeading')
+              {view === 'clubs'
+                ? tr('navigation.clubsHeading')
                 : view === 'characters'
                   ? tr('navigation.charactersHeading')
                   : view === 'relations'
@@ -606,42 +631,48 @@ export default function App() {
             <p>{subtitle}</p>
           </div>
           <div className="header-actions">
-              {view === 'clubs' && club && (
+            {view === 'clubs' && club && (
               <>
                 <div className="dropdown-wrap">
                   <button
-                      className="icon-button more-club"
-                      aria-label={tr('clubs.actionsLabel')}
-                      onClick={() => setClubMenu(!clubMenu)}
+                    className="icon-button more-club"
+                    aria-label={tr('clubs.actionsLabel')}
+                    onClick={() => setClubMenu(!clubMenu)}
                   >
                     <MoreHorizontal size={22} />
                   </button>
-                    {clubMenu && (
+                  {clubMenu && (
                     <div className="dropdown">
                       <button
                         onClick={() => {
-                            setEditor({kind: 'club', id: club.id});
-                            setClubMenu(false);
+                          setEditor({ kind: 'club', id: club.id });
+                          setClubMenu(false);
                         }}
                       >
                         <Pencil size={15} />
-                          {tr('clubs.edit')}
+                        {tr('clubs.edit')}
                       </button>
                       <button
                         onClick={() => {
                           const copy = {
-                              ...club,
+                            ...club,
                             id: crypto.randomUUID(),
-                              name: tr('clubs.copyName', club.name.slice(0, 70)),
-                              characterIds: [...club.characterIds],
-                              connections: club.connections.map((e) => ({
+                            name: tr('clubs.copyName', club.name.slice(0, 70)),
+                            characterIds: [...club.characterIds],
+                            connections: club.connections.map((e) => ({
                               ...e,
                               id: crypto.randomUUID(),
                             })),
                           };
-                            saveClub(copy);
-                            setClubMenu(false);
+                          saveClub(copy);
+                          setClubMenu(false);
                         }}
+                        disabled={data.clubs.length >= MAX_CLUBS}
+                        title={
+                          data.clubs.length >= MAX_CLUBS
+                            ? tr('validation.clubLimit', MAX_CLUBS)
+                            : undefined
+                        }
                       >
                         <Copy size={15} />
                         {tr('actions.duplicate')}
@@ -650,21 +681,21 @@ export default function App() {
                         className="danger-text"
                         onClick={() => {
                           setConfirmation({
-                              title: tr('clubs.deleteTitle'),
-                              text: tr('clubs.deleteMessage', club.name),
+                            title: tr('clubs.deleteTitle'),
+                            text: tr('clubs.deleteMessage', club.name),
                             action: () => {
                               commit((data) => {
-                                  const clubs = data.clubs.filter((c) => c.id !== club.id);
-                                  return {...data, clubs, activeClubId: clubs[0]?.id || null};
+                                const clubs = data.clubs.filter((c) => c.id !== club.id);
+                                return { ...data, clubs, activeClubId: clubs[0]?.id || null };
                               });
                               clearSelection();
                             },
                           });
-                            setClubMenu(false);
+                          setClubMenu(false);
                         }}
                       >
                         <Trash2 size={15} />
-                          {tr('clubs.delete')}
+                        {tr('clubs.delete')}
                       </button>
                     </div>
                   )}
@@ -684,8 +715,8 @@ export default function App() {
                       <button
                         onClick={() =>
                           void exportJSON(
-                              createStoriesTransfer(data, [club.id]),
-                              tr('filenames.story', club.name),
+                            createStoriesTransfer(data, [club.id]),
+                            tr('filenames.story', club.name),
                           )
                         }
                       >
@@ -841,20 +872,20 @@ export default function App() {
           </div>
         )}
 
-          {view === 'clubs' && (
+        {view === 'clubs' && (
           <div className="editor-layout">
             <section
               className={`canvas ${linking ? 'linking' : ''}`}
               aria-label={tr('diagram.editorLabel')}
             >
-                {club && club.characterIds.length > 0 ? (
+              {club && club.characterIds.length > 0 ? (
                 <>
                   <div className="canvas-top">
                     <div className="canvas-meta">
                       <span className="status-dot" />
                       {tr('diagram.heading')}
                       <span className="meta-divider">/</span>
-                        {club.characterIds.length}
+                      {club.characterIds.length}
                       {tr('counts.membersSuffix')}
                     </div>
                     <button
@@ -903,7 +934,7 @@ export default function App() {
                       style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})` }}
                     >
                       <Diagram
-                          club={club}
+                        club={club}
                         characters={data.characters}
                         types={data.relationTypes}
                         selectedCharacter={selectedCharacter}
@@ -973,17 +1004,17 @@ export default function App() {
                   <div className="empty-orbit">
                     <OrbitMark size={120} />
                   </div>
-                    <span className="eyebrow">{tr('clubs.emptyEyebrow')}</span>
-                    <h2>{club ? tr('clubs.noMembersHeading') : tr('clubs.emptyHeading')}</h2>
-                    <p>{club ? tr('clubs.noMembersDescription') : tr('clubs.emptyDescription')}</p>
+                  <span className="eyebrow">{tr('clubs.emptyEyebrow')}</span>
+                  <h2>{club ? tr('clubs.noMembersHeading') : tr('clubs.emptyHeading')}</h2>
+                  <p>{club ? tr('clubs.noMembersDescription') : tr('clubs.emptyDescription')}</p>
                   <button
                     className="button primary"
-                    onClick={() => setEditor({kind: club ? 'participants' : 'club'})}
+                    onClick={() => setEditor({ kind: club ? 'participants' : 'club' })}
                   >
                     <Plus size={17} />
-                      {club ? tr('characters.add') : tr('clubs.createFirst')}
+                    {club ? tr('characters.add') : tr('clubs.createFirst')}
                   </button>
-                    {!club && !data.characters.length && (
+                  {!club && !data.characters.length && (
                     <button
                       className="text-button demo-button"
                       onClick={() => {
@@ -1008,7 +1039,7 @@ export default function App() {
                     <i />
                     <span>
                       <b>03</b>
-                        {tr('clubs.defaultName')}
+                      {tr('clubs.defaultName')}
                     </span>
                   </div>
                 </div>
@@ -1016,7 +1047,7 @@ export default function App() {
             </section>
 
             <aside className="inspector">
-                {character && club ? (
+              {character && club ? (
                 <>
                   <div className="inspector-title">
                     <span>{tr('characters.detailHeading')}</span>
@@ -1051,7 +1082,7 @@ export default function App() {
                     <span>{tr('characters.connectionsHeading')}</span>
                     <Count>
                       {
-                          club.connections.filter(
+                        club.connections.filter(
                           (e) => e.sourceId === character.id || e.targetId === character.id,
                         ).length
                       }
@@ -1081,7 +1112,7 @@ export default function App() {
                           title: tr('members.removeTitle'),
                           text: tr('members.removeMessage', character.name),
                           action: () => {
-                              updateClub((c) => removeFromClub(c, character.id));
+                            updateClub((c) => removeFromClub(c, character.id));
                             clearSelection();
                           },
                         });
@@ -1092,7 +1123,7 @@ export default function App() {
                     </button>
                   </div>
                 </>
-                ) : edge && club ? (
+              ) : edge && club ? (
                 <>
                   <div className="inspector-title">
                     <span>{tr('connections.detailHeading')}</span>
@@ -1137,7 +1168,7 @@ export default function App() {
                           title: tr('connections.deleteTitle'),
                           text: tr('connections.deleteMessage'),
                           action: () => {
-                              updateClub((c) => ({
+                            updateClub((c) => ({
                               ...c,
                               connections: c.connections.filter((e) => e.id !== edge.id),
                             }));
@@ -1159,14 +1190,14 @@ export default function App() {
                       onClick={() => setInspectorTab('members')}
                     >
                       {tr('inspector.members')}
-                        <Count>{club?.characterIds.length || 0}</Count>
+                      <Count>{club?.characterIds.length || 0}</Count>
                     </button>
                     <button
                       className={inspectorTab === 'connections' ? 'active' : ''}
                       onClick={() => setInspectorTab('connections')}
                     >
                       {tr('inspector.connections')}
-                        <Count>{club?.connections.length || 0}</Count>
+                      <Count>{club?.connections.length || 0}</Count>
                     </button>
                   </div>
                   <ScrollArea
@@ -1189,10 +1220,10 @@ export default function App() {
                           </button>
                         </div>
                         <div className="inspector-list">
-                            {club &&
+                          {club &&
                             members.map((c) => {
                               const id = c.id;
-                                const index = club.characterIds.indexOf(id);
+                              const index = club.characterIds.indexOf(id);
                               return (
                                 <div className="member-row" key={id}>
                                   <button className="member-main" onClick={() => pickCharacter(id)}>
@@ -1201,7 +1232,7 @@ export default function App() {
                                       <strong>{c.name}</strong>
                                       <small>
                                         {
-                                            club.connections.filter(
+                                          club.connections.filter(
                                             (e) => e.sourceId === id || e.targetId === id,
                                           ).length
                                         }{' '}
@@ -1233,7 +1264,7 @@ export default function App() {
                               );
                             })}
                         </div>
-                          {club && (
+                        {club && (
                           <button
                             className="button dashed full-width"
                             onClick={() => setEditor({ kind: 'participants' })}
@@ -1242,7 +1273,7 @@ export default function App() {
                             {tr('members.fromLibrary')}
                           </button>
                         )}
-                          {!club?.characterIds.length && (
+                        {!club?.characterIds.length && (
                           <EmptyHint>{tr('members.emptyHint')}</EmptyHint>
                         )}
                       </>
@@ -1260,7 +1291,7 @@ export default function App() {
                           </button>
                         </div>
                         <div className="inspector-list">
-                            {club &&
+                          {club &&
                             connections.map((e) => (
                               <ConnectionRow
                                 key={e.id}
@@ -1274,7 +1305,7 @@ export default function App() {
                               />
                             ))}
                         </div>
-                          {!club?.connections.length && (
+                        {!club?.connections.length && (
                           <EmptyHint>{tr('connections.createHint')}</EmptyHint>
                         )}
                       </>
@@ -1337,7 +1368,7 @@ export default function App() {
                   <div>
                     <h2>{type.name}</h2>
                     <p>
-                        {data.clubs.reduce(
+                      {data.clubs.reduce(
                         (sum, c) => sum + c.connections.filter((e) => e.typeId === type.id).length,
                         0,
                       )}{' '}
@@ -1429,8 +1460,8 @@ export default function App() {
                   <span>{tr('counts.characters')}</span>
                 </div>
                 <div>
-                    <strong>{data.clubs.length}</strong>
-                    <span>{tr('counts.clubs')}</span>
+                  <strong>{data.clubs.length}</strong>
+                  <span>{tr('counts.clubs')}</span>
                 </div>
                 <div>
                   <strong>{data.relationTypes.length}</strong>
@@ -1542,7 +1573,7 @@ export default function App() {
                 </p>
                 <p>
                   <b>3</b>
-                    <span>{tr('help.clubStep')}</span>
+                  <span>{tr('help.clubStep')}</span>
                 </p>
               </div>
               <p className="field-hint">{tr('help.shortcuts')}</p>
@@ -1553,7 +1584,7 @@ export default function App() {
         <footer className="statusbar">
           <span className={`save-status ${library.status === 'error' ? 'error' : ''}`}>
             {library.status === 'saving' ? (
-                <LoadingIcon size={12} className="spin"/>
+              <LoadingIcon size={12} className="spin" />
             ) : (
               <Check size={12} />
             )}
@@ -1565,7 +1596,7 @@ export default function App() {
           </span>
           <span>
             {view === 'clubs' && club
-                ? tr('counts.diagramSummary', club.connections.length, club.characterIds.length)
+              ? tr('counts.diagramSummary', club.connections.length, club.characterIds.length)
               : tr('app.footer')}
           </span>
         </footer>
@@ -1586,10 +1617,10 @@ export default function App() {
                   ? editor.id
                     ? tr('relationships.edit')
                     : tr('relationships.new')
-                        : editor.kind === 'club'
+                  : editor.kind === 'club'
                     ? editor.id
-                                ? tr('clubs.edit')
-                                : tr('clubs.new')
+                      ? tr('clubs.edit')
+                      : tr('clubs.new')
                     : editor.kind === 'participants'
                       ? tr('members.title')
                       : editor.id
@@ -1637,24 +1668,24 @@ export default function App() {
               onClose={closeEditor}
             />
           )}
-            {editor.kind === 'club' && (
-                <ClubForm
-                    club={data.clubs.find((c) => c.id === editor.id)}
-                    onSave={saveClub}
+          {editor.kind === 'club' && (
+            <ClubForm
+              club={data.clubs.find((c) => c.id === editor.id)}
+              onSave={saveClub}
               onClose={closeEditor}
             />
           )}
-            {editor.kind === 'connection' && club && (
+          {editor.kind === 'connection' && club && (
             <ConnectionForm
-                connection={club.connections.find((e) => e.id === editor.id)}
-                club={club}
+              connection={club.connections.find((e) => e.id === editor.id)}
+              club={club}
               data={data}
               sourceId={editor.sourceId}
               targetId={editor.targetId}
               onClose={closeEditor}
               onNewType={newType}
               onSave={(edge) => {
-                  updateClub((c) => ({
+                updateClub((c) => ({
                   ...c,
                   connections: c.connections.some((e) => e.id === edge.id)
                     ? c.connections.map((e) => (e.id === edge.id ? edge : e))
@@ -1667,16 +1698,16 @@ export default function App() {
               }}
             />
           )}
-            {editor.kind === 'participants' && club && (
+          {editor.kind === 'participants' && club && (
             <ParticipantsForm
-                club={club}
+              club={club}
               characters={data.characters}
               folders={data.folders}
               onClose={closeEditor}
               onNewCharacter={newCharacter}
               onSave={(ids) => {
                 const members = new Set(ids);
-                  updateClub((c) => ({
+                updateClub((c) => ({
                   ...c,
                   characterIds: ids,
                   connections: c.connections.filter(
@@ -1729,16 +1760,16 @@ export default function App() {
 
 function ConnectionRow({
   edgeId,
-                           club,
+  club,
   data,
   onClick,
 }: {
   edgeId: string;
-    club: Club;
+  club: Club;
   data: Database;
   onClick: () => void;
 }) {
-    const edge = club.connections.find((e) => e.id === edgeId)!;
+  const edge = club.connections.find((e) => e.id === edgeId)!;
   const type = data.relationTypes.find((t) => t.id === edge.typeId)!;
   return (
     <button className="connection-row" onClick={onClick}>

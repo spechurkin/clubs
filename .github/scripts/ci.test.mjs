@@ -89,9 +89,15 @@ function apiFixture({ releases = [], assets = [], failUpload, corruptUpload } = 
     addRaw() {
       return this;
     },
-    async write() {},
+    async write() {
+    },
   };
-  return { github, core: { info() {}, summary }, calls };
+  return {
+    github, core: {
+      info() {
+      }, summary,
+    }, calls,
+  };
 }
 
 test('validates matching package, lockfile and stable or prerelease tags', () => {

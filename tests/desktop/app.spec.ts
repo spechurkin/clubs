@@ -1,12 +1,12 @@
-import {russianText} from '../russian-fixtures';
-import {_electron as electron, type ElectronApplication, expect, type Page, test,} from '@playwright/test';
-import {mkdir, readFile, rm, writeFile} from 'node:fs/promises';
+import { russianText } from '../russian-fixtures';
+import { _electron as electron, type ElectronApplication, expect, type Page, test } from '@playwright/test';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import {demoDatabase} from '../../src/demo';
-import {databaseSchema, emptyDatabase} from '../../shared/model';
-import {transferSchema} from '../../shared/transfer';
-import {folderEntries} from '../../shared/folders';
-import {setLocale} from '../../shared/i18n';
+import { demoDatabase } from '../../src/demo';
+import { databaseSchema, emptyDatabase } from '../../shared/model';
+import { transferSchema } from '../../shared/transfer';
+import { folderEntries } from '../../shared/folders';
+import { setLocale } from '../../shared/i18n';
 
 setLocale('ru');
 
@@ -22,18 +22,20 @@ async function launch(directory = dataDir) {
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env))
     if (value && key !== 'ELECTRON_RUN_AS_NODE') env[key] = value;
-    env.CLUB_DATA_DIR = directory;
+  env.CLUB_DATA_DIR = directory;
   app = await electron.launch({
-      executablePath: process.env.CLUB_TEST_EXECUTABLE,
-      args: process.env.CLUB_TEST_EXECUTABLE ? [] : [root],
+    executablePath: process.env.CLUB_TEST_EXECUTABLE,
+    args: process.env.CLUB_TEST_EXECUTABLE ? [] : [root],
     env,
   });
   page = await app.firstWindow();
   await expect(page.locator('.save-status')).toHaveText(russianText('save.saved'));
 }
+
 async function saved() {
   await expect(page.locator('.save-status')).toHaveText(russianText('save.saved'));
 }
+
 async function moveCharacter(name: string, folderPath?: string) {
   await page
     .getByRole('button', { name: russianText('characters.editLabel', name), exact: true })
@@ -47,6 +49,7 @@ async function moveCharacter(name: string, folderPath?: string) {
     .click();
   await saved();
 }
+
 async function createCharacter(name: string, portrait = false) {
   await page.getByRole('button', { name: russianText('members.add'), exact: true }).click();
   await page.getByRole('button', { name: russianText('characters.createNew') }).click();
@@ -236,8 +239,8 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
   ).toBeVisible();
   // Parent filters include descendants; switching branches keeps the participant selection.
   await page
-      .locator('.club-list-item')
-      .filter({hasText: russianText('demo.club.name')})
+    .locator('.club-list-item')
+    .filter({ hasText: russianText('demo.club.name') })
     .click();
   await page.getByRole('button', { name: russianText('members.add'), exact: true }).click();
   await page
@@ -335,7 +338,7 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
   await expect(page.getByRole('status')).toContainText(russianText('notifications.jsonSaved'));
   const folderPackage = transferSchema.parse(JSON.parse(await readFile(folderFile, 'utf8')));
   expect(folderPackage.data.characters).toHaveLength(3);
-    expect(folderPackage.data.clubs).toEqual([]);
+  expect(folderPackage.data.clubs).toEqual([]);
   expect(folderEntries(folderPackage.data.folders).map((entry) => entry.path)).toEqual([
     russianText('samples.otherWorld'),
     russianText('samples.otherWorldWestHousePath'),
@@ -348,16 +351,16 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
     dialog.showSaveDialog = async () => ({ canceled: false, filePath });
   }, storyFile);
   await page
-      .locator('.club-list-item')
-      .filter({hasText: russianText('demo.club.name')})
+    .locator('.club-list-item')
+    .filter({ hasText: russianText('demo.club.name') })
     .click();
   await page.getByRole('button', { name: russianText('actions.export'), exact: true }).click();
   await page
     .getByRole('button', { name: new RegExp('^' + russianText('transfer.story'), '') })
     .click();
   await expect(page.getByRole('status')).toContainText(russianText('notifications.jsonSaved'));
-    expect(transferSchema.parse(JSON.parse(await readFile(storyFile, 'utf8'))).data.clubs).toEqual(
-        original.clubs,
+  expect(transferSchema.parse(JSON.parse(await readFile(storyFile, 'utf8'))).data.clubs).toEqual(
+    original.clubs,
   );
   await saved();
   await app.close();
@@ -401,7 +404,7 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
     JSON.parse(await readFile(path.join(directory, 'library.json'), 'utf8')),
   );
   expect(deleted.characters).toHaveLength(7);
-    expect(deleted.clubs).toEqual(original.clubs);
+  expect(deleted.clubs).toEqual(original.clubs);
   const otherId = deleted.folders.find(
     (folder) => folder.name === russianText('samples.otherWorld'),
   )!.id;
@@ -437,7 +440,7 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
   let imported = databaseSchema.parse(
     JSON.parse(await readFile(path.join(importedDirectory, 'library.json'), 'utf8')),
   );
-    expect(imported.clubs).toEqual([]);
+  expect(imported.clubs).toEqual([]);
   expect(folderEntries(imported.folders)).toEqual(folderEntries(folderPackage.data.folders));
   await page.getByRole('status').getByRole('button').click();
   await importFile(storyFile);
@@ -446,7 +449,7 @@ test('nested folders: create, collapse, reparent, filter, export and import comp
     JSON.parse(await readFile(path.join(importedDirectory, 'library.json'), 'utf8')),
   );
   expect(imported.characters).toHaveLength(7);
-    expect(imported.clubs).toEqual(original.clubs);
+  expect(imported.clubs).toEqual(original.clubs);
   expect(folderEntries(imported.folders)).toEqual(folderEntries(folderPackage.data.folders));
   await app.close();
   await launch(importedDirectory);
@@ -483,16 +486,16 @@ test('JSON transfer: export stories, characters, folders and relations, add into
     name: russianText('samples.respect'),
     color: '#123456',
   });
-    source.clubs.push({
+  source.clubs.push({
     id: 'other',
-        name: russianText('samples.anotherClub'),
+    name: russianText('samples.anotherClub'),
     description: '',
     characterIds: ['elias', 'mira'],
     connections: [],
   });
-    source.clubs.push({
+  source.clubs.push({
     id: 'empty-story',
-        name: russianText('samples.emptyClub'),
+    name: russianText('samples.emptyClub'),
     description: '',
     characterIds: [],
     connections: [],
@@ -501,6 +504,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
   await launch(sourceDir);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+
   async function exportTo(filename: string, click: () => Promise<unknown>) {
     const file = path.join(outputDir, filename);
     await app.evaluate(({ dialog }, filePath) => {
@@ -513,6 +517,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
     await page.getByRole('status').getByRole('button').click();
     return result;
   }
+
   await page.getByRole('button', { name: russianText('actions.export'), exact: true }).click();
   await expect(
     page.getByRole('button', { name: new RegExp('^' + russianText('transfer.story'), '') }),
@@ -522,7 +527,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
     page.getByRole('button', { name: new RegExp('^' + russianText('transfer.story'), '') }).click(),
   );
   expect(story.kind).toBe('stories');
-    expect(story.data.clubs).toEqual([source.clubs[0]]);
+  expect(story.data.clubs).toEqual([source.clubs[0]]);
   expect(story.data.characters).toEqual(source.characters.slice(0, 6));
   expect(story.data.folders).toEqual([source.folders[0]]);
   expect(story.data.relationTypes).toEqual(source.relationTypes.slice(0, 4));
@@ -537,7 +542,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
   );
   expect(characters.data.characters).toEqual(source.characters);
   expect(characters.data.folders).toEqual(source.folders);
-    expect(characters.data.clubs).toEqual([]);
+  expect(characters.data.clubs).toEqual([]);
   expect(characters.data.relationTypes).toEqual([]);
   await page
     .locator('.folder-panel')
@@ -553,7 +558,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
       .click(),
   );
   expect(folder.data.characters.map((character) => character.id)).toEqual(['nora', 'mira']);
-    expect(folder.data.clubs).toEqual([]);
+  expect(folder.data.clubs).toEqual([]);
   const individual = await exportTo('one-character.json', () =>
     page
       .locator('.card-bottom')
@@ -576,7 +581,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
   const stories = await exportTo('all-stories.json', () =>
     page.getByRole('button', { name: russianText('transfer.allStories'), exact: true }).click(),
   );
-    expect(stories.data.clubs).toEqual(source.clubs);
+  expect(stories.data.clubs).toEqual(source.clubs);
   expect(stories.data.characters).toHaveLength(6);
   expect(errors).toEqual([]);
   await app.close();
@@ -592,7 +597,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
     ],
     folders: [{ id: 'family', name: russianText('samples.localFolder'), parentId: null }],
     relationTypes: [{ id: 'trust', name: russianText('samples.localTrust'), color: '#fedcba' }],
-      clubs: [
+    clubs: [
       {
         id: 'lake',
         name: russianText('samples.localStory'),
@@ -601,12 +606,13 @@ test('JSON transfer: export stories, characters, folders and relations, add into
         connections: [],
       },
     ],
-      activeClubId: 'lake',
+    activeClubId: 'lake',
   };
   await writeFile(path.join(targetDir, 'library.json'), JSON.stringify(local));
   await launch(targetDir);
   page.on('pageerror', (error) => errors.push(error.message));
   await page.getByRole('button', { name: russianText('navigation.settings'), exact: true }).click();
+
   async function importFrom(filename: string, response = 1) {
     await app.evaluate(
       ({ dialog }, options) => {
@@ -620,13 +626,14 @@ test('JSON transfer: export stories, characters, folders and relations, add into
     );
     await page.getByRole('button', { name: russianText('transfer.import'), exact: true }).click();
   }
+
   await importFrom('all-characters.json');
   await expect(page.getByRole('status')).toContainText(russianText('samples.sevenCharactersText'));
   let stored = databaseSchema.parse(
     JSON.parse(await readFile(path.join(targetDir, 'library.json'), 'utf8')),
   );
   expect(stored.characters).toHaveLength(8);
-    expect(stored.clubs).toEqual(local.clubs);
+  expect(stored.clubs).toEqual(local.clubs);
   expect(stored.relationTypes).toEqual(local.relationTypes);
   expect(stored.characters[0]).toEqual(local.characters[0]);
   await page.getByRole('status').getByRole('button').click();
@@ -636,12 +643,12 @@ test('JSON transfer: export stories, characters, folders and relations, add into
     JSON.parse(await readFile(path.join(targetDir, 'library.json'), 'utf8')),
   );
   expect(stored.characters).toHaveLength(8);
-    expect(stored.clubs).toHaveLength(4);
+  expect(stored.clubs).toHaveLength(4);
   expect(stored.characters[0]).toEqual(local.characters[0]);
   expect(stored.folders[0]).toEqual(local.folders[0]);
-    expect(stored.clubs[0]).toEqual(local.clubs[0]);
-    expect(stored.activeClubId).toBe('lake');
-    const importedStory = stored.clubs.find((club) => club.name === russianText('demo.club.name'))!;
+  expect(stored.clubs[0]).toEqual(local.clubs[0]);
+  expect(stored.activeClubId).toBe('lake');
+  const importedStory = stored.clubs.find((club) => club.name === russianText('demo.club.name'))!;
   const importedNora = stored.characters.find(
     (character) => character.name === russianText('demo.nora.name'),
   )!;
@@ -659,7 +666,7 @@ test('JSON transfer: export stories, characters, folders and relations, add into
   await page.getByRole('status').getByRole('button').click();
   // Reject a broken endpoint before writing and leave the local library intact.
   const broken = structuredClone(stories);
-    broken.data.clubs[0].connections[0].targetId = 'missing-character';
+  broken.data.clubs[0].connections[0].targetId = 'missing-character';
   await writeFile(path.join(outputDir, 'broken-transfer.json'), JSON.stringify(broken));
   await importFrom('broken-transfer.json');
   await expect(page.getByRole('status')).toContainText(russianText('samples.invalidExportText'));
@@ -678,8 +685,8 @@ test('JSON transfer: export stories, characters, folders and relations, add into
   await app.close();
   await launch(targetDir);
   await page
-      .locator('.club-list-item')
-      .filter({hasText: russianText('demo.club.name')})
+    .locator('.club-list-item')
+    .filter({ hasText: russianText('demo.club.name') })
     .click();
   await expect(page.getByTestId('diagram').locator('.diagram-node')).toHaveCount(6);
   await expect(page.getByTestId('diagram').locator('.diagram-edge')).toHaveCount(7);
@@ -692,10 +699,10 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
   await launch();
   const rendererErrors: string[] = [];
   page.on('pageerror', (error) => rendererErrors.push(error.message));
-    await page.getByRole('button', {name: russianText('clubs.createFirst')}).click();
+  await page.getByRole('button', { name: russianText('clubs.createFirst') }).click();
   await page
     .getByRole('dialog')
-      .getByLabel(russianText('clubs.nameLabel'))
+    .getByLabel(russianText('clubs.nameLabel'))
     .fill(russianText('samples.firstStory'));
   await page
     .getByRole('dialog')
@@ -703,7 +710,7 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
     .fill(russianText('samples.desktopDescription'));
   await page
     .getByRole('dialog')
-      .getByRole('button', {name: russianText('clubs.create'), exact: true})
+    .getByRole('button', { name: russianText('clubs.create'), exact: true })
     .click();
   await createCharacter(russianText('samples.alice'));
   await createCharacter(russianText('samples.boris'), true);
@@ -747,15 +754,15 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
   await expect(page.getByTestId('diagram').locator('marker')).toHaveCount(1);
   await expect(page.locator('.edge-detail')).toContainText(russianText('demo.relationships.fear'));
   await expect(page.locator('.edge-detail')).toContainText(russianText('samples.connectionNotes'));
-    // Reuse the same local characters in a second club.
-    await page.getByRole('button', {name: russianText('clubs.new'), exact: true}).click();
+  // Reuse the same local characters in a second club.
+  await page.getByRole('button', { name: russianText('clubs.new'), exact: true }).click();
   await page
     .getByRole('dialog')
-      .getByLabel(russianText('clubs.nameLabel'))
+    .getByLabel(russianText('clubs.nameLabel'))
     .fill(russianText('samples.secondStory'));
   await page
     .getByRole('dialog')
-      .getByRole('button', {name: russianText('clubs.create'), exact: true})
+    .getByRole('button', { name: russianText('clubs.create'), exact: true })
     .click();
   await page.getByRole('button', { name: russianText('characters.add'), exact: true }).click();
   await page
@@ -793,7 +800,7 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
     .getByRole('button', { name: russianText('actions.saveChanges') })
     .click();
   await page
-      .locator('.club-list-item')
+    .locator('.club-list-item')
     .filter({ hasText: russianText('samples.firstStory') })
     .click();
   await expect(
@@ -807,14 +814,14 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
     ({ dialog }, exportPath) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: exportPath });
     },
-      path.join(outputDir, 'club.svg'),
+    path.join(outputDir, 'club.svg'),
   );
   await page.getByRole('button', { name: russianText('actions.export'), exact: false }).click();
   await page.getByRole('button', { name: russianText('export.svg'), exact: false }).click();
   await expect(page.getByRole('status')).toContainText(
     russianText('notifications.diagramSaved', 'SVG'),
   );
-    const svg = await readFile(path.join(outputDir, 'club.svg'), 'utf8');
+  const svg = await readFile(path.join(outputDir, 'club.svg'), 'utf8');
   expect(svg).toContain(russianText('samples.aliceWest'));
   expect(svg).toContain('data:image/webp;base64');
   expect(svg).not.toContain('<script');
@@ -822,14 +829,14 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
     ({ dialog }, exportPath) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: exportPath });
     },
-      path.join(outputDir, 'club.png'),
+    path.join(outputDir, 'club.png'),
   );
   await page.getByRole('button', { name: russianText('actions.export'), exact: false }).click();
   await page.getByRole('button', { name: russianText('export.png'), exact: false }).click();
   await expect(page.getByRole('status')).toContainText(
     russianText('notifications.diagramSaved', 'PNG'),
   );
-    const png = await readFile(path.join(outputDir, 'club.png'));
+  const png = await readFile(path.join(outputDir, 'club.png'));
   expect(png.subarray(1, 4).toString()).toBe('PNG');
   expect(png.readUInt32BE(16)).toBe(1840);
   await page
@@ -850,13 +857,13 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
   await launch();
   const library = JSON.parse(await readFile(path.join(dataDir, 'library.json'), 'utf8'));
   expect(library.characters).toHaveLength(2);
-    expect(library.clubs).toHaveLength(2);
-    expect(library.clubs[0].characterIds).toHaveLength(1);
-    expect(library.clubs[0].connections).toHaveLength(0);
-    expect(library.clubs[1].characterIds).toHaveLength(2);
+  expect(library.clubs).toHaveLength(2);
+  expect(library.clubs[0].characterIds).toHaveLength(1);
+  expect(library.clubs[0].connections).toHaveLength(0);
+  expect(library.clubs[1].characterIds).toHaveLength(2);
   expect(library.characters[1].image).toMatch(/^data:image\/webp;base64,/);
   await page
-      .locator('.club-list-item')
+    .locator('.club-list-item')
     .filter({ hasText: russianText('samples.secondStory') })
     .click();
   await expect(
@@ -871,14 +878,14 @@ test('real desktop: create, reuse, edit, export, remove from club and reopen loc
       exact: true,
     }),
   ).toBeVisible();
-});
+};);
 
 test('alphabetical lists preserve saved club order and geometry while manual ring reordering still works', async () => {
   const directory = path.join(root, '.test-data', 'alphabetical');
   await rm(directory, { recursive: true, force: true });
   await mkdir(directory, { recursive: true });
   const original = demoDatabase();
-    original.clubs.push({
+  original.clubs.push({
     id: 'alpha',
     name: russianText('samples.alpha'),
     description: '',
@@ -914,15 +921,15 @@ test('alphabetical lists preserve saved club order and geometry while manual rin
       );
   const initialGeometry = await geometry();
   expect(initialGeometry.map((node) => node.name)).toEqual(
-      original.clubs[0].characterIds.map((id) =>
+    original.clubs[0].characterIds.map((id) =>
       russianText(
         'diagram.characterLabel',
         original.characters.find((character) => character.id === id)!.name,
       ),
     ),
   );
-    await expect(page.locator('.club-list-item strong')).toHaveText([
-        russianText('demo.club.name'),
+  await expect(page.locator('.club-list-item strong')).toHaveText([
+    russianText('demo.club.name'),
     russianText('samples.alpha'),
   ]);
   await expect(page.locator('.member-main strong')).toHaveText(names);
@@ -1001,8 +1008,8 @@ test('alphabetical lists preserve saved club order and geometry while manual rin
     .click();
   await expect(page.locator('.type-card h2')).toHaveText(types);
   await page
-      .locator('.club-list-item')
-      .filter({hasText: russianText('demo.club.name')})
+    .locator('.club-list-item')
+    .filter({ hasText: russianText('demo.club.name') })
     .click();
   expect(await geometry()).toEqual(initialGeometry);
   await saved();
@@ -1022,7 +1029,7 @@ test('alphabetical lists preserve saved club order and geometry while manual rin
   await expect
     .poll(async () => {
       const stored = databaseSchema.parse(JSON.parse(await readFile(libraryFile, 'utf8')));
-        return stored.clubs[0].characterIds;
+      return stored.clubs[0].characterIds;
     })
     .toEqual(reordered);
   await expect(page.locator('.member-main strong')).toHaveText(names);
@@ -1036,8 +1043,8 @@ test('alphabetical lists preserve saved club order and geometry while manual rin
       ),
     ),
   );
-    await expect(page.locator('.club-list-item strong')).toHaveText([
-        russianText('demo.club.name'),
+  await expect(page.locator('.club-list-item strong')).toHaveText([
+    russianText('demo.club.name'),
     russianText('samples.alpha'),
   ]);
   await expect(page.locator('.member-main strong')).toHaveText(names);
@@ -1056,16 +1063,16 @@ test('inspector: each list keeps its own position after switching tabs and editi
     folderId: null,
   }));
   original.relationTypes = demoDatabase().relationTypes;
-    const club = {
+  const club = {
     id: 'large',
-        name: russianText('samples.largeClub'),
+    name: russianText('samples.largeClub'),
     description: '',
     characterIds: original.characters.map((character) => character.id).reverse(),
-        connections: [] as (typeof original.clubs)[number]['connections'],
+    connections: [] as (typeof original.clubs)[number]['connections'],
   };
-    for (let source = 0; source < 48 && club.connections.length < 120; source++) {
-        for (let target = source + 1; target < 48 && club.connections.length < 120; target++) {
-            club.connections.push({
+  for (let source = 0; source < 48 && club.connections.length < 120; source++) {
+    for (let target = source + 1; target < 48 && club.connections.length < 120; target++) {
+      club.connections.push({
         id: `edge-${source}-${target}`,
         sourceId: `character-${source}`,
         targetId: `character-${target}`,
@@ -1075,8 +1082,8 @@ test('inspector: each list keeps its own position after switching tabs and editi
       });
     }
   }
-    original.clubs = [club];
-    original.activeClubId = club.id;
+  original.clubs = [club];
+  original.activeClubId = club.id;
   const libraryFile = path.join(directory, 'library.json');
   await writeFile(libraryFile, JSON.stringify(original));
   await launch(directory);
@@ -1136,8 +1143,8 @@ test('inspector: each list keeps its own position after switching tabs and editi
     .click();
   expect(await content.evaluate((element) => element.scrollTop)).toBe(memberScroll);
   const stored = databaseSchema.parse(JSON.parse(await readFile(libraryFile, 'utf8')));
-    expect(stored.clubs[0].characterIds).toEqual(club.characterIds);
-    expect(stored.clubs[0].connections).toHaveLength(121);
+  expect(stored.clubs[0].characterIds).toEqual(club.characterIds);
+  expect(stored.clubs[0].connections).toHaveLength(121);
 });
 
 test('example diagram renders without network requests or errors', async () => {
@@ -1154,61 +1161,66 @@ test('example diagram renders without network requests or errors', async () => {
   await saved();
   await expect(page.getByTestId('diagram').locator('.diagram-node')).toHaveCount(6);
   await expect(page.getByTestId('diagram').locator('.diagram-edge')).toHaveCount(7);
-    const viewport = page.locator('.diagram-viewport');
-    const transform = page.locator('.diagram-transform');
-    const center = page.getByRole('button', {name: russianText('diagram.center'), exact: true});
-    await viewport.hover({position: {x: 100, y: 180}});
-    await page.mouse.wheel(0, 120);
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, -120)');
-    await page.mouse.wheel(80, 0);
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -80, -120)');
-    await page.keyboard.down('Shift');
-    await page.mouse.wheel(0, 60);
-    await page.keyboard.up('Shift');
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -140, -120)');
-    await expect(page.locator('.zoom-controls > span')).toHaveText('100%');
-    await center.click();
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  const viewport = page.locator('.diagram-viewport');
+  const transform = page.locator('.diagram-transform');
+  const center = page.getByRole('button', { name: russianText('diagram.center'), exact: true });
+  await viewport.hover({ position: { x: 100, y: 180 } });
+  await page.mouse.wheel(0, 120);
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, -120)');
+  await page.mouse.wheel(80, 0);
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -80, -120)');
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, 60);
+  await page.keyboard.up('Shift');
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -140, -120)');
+  await expect(page.locator('.zoom-controls > span')).toHaveText('100%');
+  await center.click();
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
 
-    await viewport.hover({position: {x: 100, y: 180}});
-    await page.keyboard.down('Control');
-    await page.mouse.wheel(0, -120);
-    await expect(page.locator('.zoom-controls > span')).toHaveText('127%');
-    await page.mouse.wheel(0, -10000);
-    await expect(page.locator('.zoom-controls > span')).toHaveText('250%');
-    await expect(
-        page.getByRole('button', {name: russianText('diagram.zoomIn'), exact: true}),
-    ).toBeDisabled();
-    await page.mouse.wheel(0, 10000);
-    await expect(page.locator('.zoom-controls > span')).toHaveText('50%');
-    await expect(
-        page.getByRole('button', {name: russianText('diagram.zoomOut'), exact: true}),
-    ).toBeDisabled();
-    await page.keyboard.up('Control');
-    expect(
-        await app.evaluate(({BrowserWindow}) =>
-            BrowserWindow.getAllWindows()[0].webContents.getZoomFactor(),
-        ),
-    ).toBe(1);
-    await center.click();
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  await viewport.hover({ position: { x: 100, y: 180 } });
+  await page.keyboard.down('Control');
+  await page.mouse.wheel(0, -120);
+  await expect(page.locator('.zoom-controls > span')).toHaveText('127%');
+  await page.mouse.wheel(0, -10000);
+  await expect(page.locator('.zoom-controls > span')).toHaveText('250%');
+  await expect(
+    page.getByRole('button', { name: russianText('diagram.zoomIn'), exact: true }),
+  ).toBeDisabled();
+  await page.mouse.wheel(0, 10000);
+  await expect(page.locator('.zoom-controls > span')).toHaveText('50%');
+  await expect(
+    page.getByRole('button', { name: russianText('diagram.zoomOut'), exact: true }),
+  ).toBeDisabled();
+  await page.keyboard.up('Control');
+  expect(
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].webContents.getZoomFactor(),
+    ),
+  ).toBe(1);
+  await center.click();
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
 
-    await page.locator('.inspector').hover();
-    await page.mouse.wheel(0, 120);
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
-    await page.getByRole('button', {name: russianText('navigation.characters'), exact: true}).click();
-    await page.locator('.rail-button').filter({hasText: russianText('navigation.clubs')}).click();
-    await viewport.hover({position: {x: 100, y: 180}});
-    await page.mouse.wheel(0, 60);
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, -60)');
-    const viewportBounds = (await viewport.boundingBox())!;
-    await page.mouse.move(viewportBounds.x + 100, viewportBounds.y + 180);
-    await page.mouse.down();
-    await page.mouse.move(viewportBounds.x + 170, viewportBounds.y + 220);
-    await page.mouse.up();
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 70, -20)');
-    await center.click();
-    await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  await page.locator('.inspector').hover();
+  await page.mouse.wheel(0, 120);
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  await page
+    .getByRole('button', { name: russianText('navigation.characters'), exact: true })
+    .click();
+  await page
+    .locator('.rail-button')
+    .filter({ hasText: russianText('navigation.clubs') })
+    .click();
+  await viewport.hover({ position: { x: 100, y: 180 } });
+  await page.mouse.wheel(0, 60);
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, -60)');
+  const viewportBounds = (await viewport.boundingBox())!;
+  await page.mouse.move(viewportBounds.x + 100, viewportBounds.y + 180);
+  await page.mouse.down();
+  await page.mouse.move(viewportBounds.x + 170, viewportBounds.y + 220);
+  await page.mouse.up();
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 70, -20)');
+  await center.click();
+  await expect(transform).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
   await page
     .getByRole('button', {
       name: russianText(
@@ -1243,12 +1255,12 @@ test('folders: migrate old data, move members, filter picker, persist and round-
   await rm(directory, { recursive: true, force: true });
   await mkdir(directory, { recursive: true });
   const original = demoDatabase();
-    const {folders: _folders, clubs, activeClubId, ...rest} = original;
+  const { folders: _folders, clubs, activeClubId, ...rest } = original;
   const legacy = {
     ...rest,
     version: 1,
-      circles: clubs,
-      activeCircleId: activeClubId,
+    circles: clubs,
+    activeCircleId: activeClubId,
     characters: original.characters.map(({ folderId: _folderId, ...character }) => character),
   };
   await writeFile(path.join(directory, 'library.json'), JSON.stringify(legacy));
@@ -1345,8 +1357,8 @@ test('folders: migrate old data, move members, filter picker, persist and round-
   await page.screenshot({ path: path.join(outputDir, 'desktop-folders.png') });
   // Folder filtering does not drop previously selected members from other folders.
   await page
-      .locator('.club-list-item')
-      .filter({hasText: russianText('demo.club.name')})
+    .locator('.club-list-item')
+    .filter({ hasText: russianText('demo.club.name') })
     .click();
   await page.getByRole('button', { name: russianText('members.add'), exact: true }).click();
   await page
@@ -1376,7 +1388,7 @@ test('folders: migrate old data, move members, filter picker, persist and round-
   await app.close();
   await launch(directory);
   let stored = JSON.parse(await readFile(path.join(directory, 'library.json'), 'utf8'));
-    expect(stored.version).toBe(4);
+  expect(stored.version).toBe(4);
   expect(stored.folders).toHaveLength(1);
   expect(stored.folders[0].name).toBe(russianText('demo.relationships.family'));
   expect(
@@ -1384,8 +1396,8 @@ test('folders: migrate old data, move members, filter picker, persist and round-
       (character: { folderId: string | null }) => character.folderId === stored.folders[0].id,
     ),
   ).toHaveLength(2);
-    expect(stored.clubs[0].characterIds).toHaveLength(7);
-    expect(stored.clubs[0].connections).toEqual(original.clubs[0].connections);
+  expect(stored.clubs[0].characterIds).toHaveLength(7);
+  expect(stored.clubs[0].connections).toEqual(original.clubs[0].connections);
   const backupFile = path.join(outputDir, 'folder-library.json');
   await app.evaluate(({ dialog }, file) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
@@ -1418,7 +1430,7 @@ test('folders: migrate old data, move members, filter picker, persist and round-
       (character: { folderId: string | null }) => character.folderId === null,
     ),
   ).toBe(true);
-    expect(stored.clubs).toEqual(backup.clubs);
+  expect(stored.clubs).toEqual(backup.clubs);
   await app.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
     dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });

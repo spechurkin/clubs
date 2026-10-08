@@ -1,9 +1,9 @@
-import {tr} from '../shared/i18n';
-import {renderToStaticMarkup} from 'react-dom/server';
+import { tr } from '../shared/i18n';
+import { renderToStaticMarkup } from 'react-dom/server';
 import Diagram from './Diagram';
-import {storage} from './storage';
-import type {Club, Database, ExportFormat} from '../shared/model';
-import {diagramBounds} from './geometry';
+import { storage } from './storage';
+import type { Club, Database, ExportFormat } from '../shared/model';
+import { diagramBounds } from './geometry';
 
 export async function exportDiagram(
   data: Database,
@@ -13,7 +13,7 @@ export async function exportDiagram(
 ) {
   let svg = renderToStaticMarkup(
     <Diagram
-        club={club}
+      club={club}
       characters={data.characters}
       types={data.relationTypes}
       clean
@@ -22,7 +22,7 @@ export async function exportDiagram(
   );
   // React may prepend image preload links; the exported document starts at svg.
   svg = svg.slice(svg.indexOf('<svg'));
-    if (format === 'svg') return storage.exportDiagram(club.name, format, svg);
+  if (format === 'svg') return storage.exportDiagram(club.name, format, svg);
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   try {
     const image = new Image();
@@ -33,15 +33,15 @@ export async function exportDiagram(
     });
     const canvas = document.createElement('canvas');
     const bounds = diagramBounds(
-        club.characterIds.length,
-        data.relationTypes.filter((t) => club.connections.some((e) => e.typeId === t.id)).length,
+      club.characterIds.length,
+      data.relationTypes.filter((t) => club.connections.some((e) => e.typeId === t.id)).length,
     );
     canvas.width = 1840;
     canvas.height = Math.round((1840 * bounds.height) / bounds.width);
     const context = canvas.getContext('2d');
     if (!context) throw new Error(tr('errors.imageExportUnavailable'));
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      return storage.exportDiagram(club.name, format, canvas.toDataURL('image/png'));
+    return storage.exportDiagram(club.name, format, canvas.toDataURL('image/png'));
   } finally {
     URL.revokeObjectURL(url);
   }
