@@ -341,7 +341,7 @@ else {
       quitting = true;
       app.quit();
     });
-  };);
+  });
 }
 
 function updateMenu() {
