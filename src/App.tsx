@@ -78,6 +78,8 @@ import { storage } from './storage';
 import { useLibrary } from './useLibrary';
 import { sortByName, sortConnections } from './sorting';
 
+import { UpdateSettings, useUpdates } from './Updates';
+
 type View = 'clubs' | 'characters' | 'relations' | 'settings';
 type Editor = {
   kind: 'character' | 'folder' | 'type' | 'club' | 'participants' | 'connection';
@@ -111,6 +113,7 @@ export default function App() {
     document.title = tr('app.name');
   }, [locale]);
   const library = useLibrary();
+  const updateState = useUpdates();
   const { data, commit } = library;
   const [view, setView] = useState<View>('clubs');
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -1416,6 +1419,7 @@ export default function App() {
 
         {view === 'settings' && (
           <section className="settings-page">
+            <UpdateSettings state={updateState} flush={library.flush} />
             <div className="settings-card compact">
               <h2>{tr('settings.language')}</h2>
               <label className="field">
@@ -1582,6 +1586,11 @@ export default function App() {
         )}
 
         <footer className="statusbar">
+          {updateState.status === 'ready' && (
+            <button className="button secondary" onClick={() => changeView('settings')}>
+              {tr('updates.readyNotice', updateState.version)}
+            </button>
+          )}
           <span className={`save-status ${library.status === 'error' ? 'error' : ''}`}>
             {library.status === 'saving' ? (
               <LoadingIcon size={12} className="spin" />

@@ -63,4 +63,12 @@ automatically, so you can stay with the story. Back up your library whenever you
 The interface is available in **English and Russian**, with instant switching in Settings. Your characters and notes
 stay as you wrote them.
 
+Windows **Setup** and Linux **AppImage** releases check for updates once a day by default and download them in
+the background. In Settings, choose checks every **day**, **week** or **month (30 days)**. The schedule survives app
+restarts. When an update is ready, open **Settings → Application updates** and choose **Save and restart to update**.
+Clubs saves your library before restarting. An internet connection is needed only to check and download updates.
+Install a release with this feature once to receive future updates; older versions cannot update themselves.
+Windows portable, Linux DEB and the current unsigned macOS builds update manually through **Download from GitHub** in
+Settings.
+
 [**Find your next story's home — download Clubs**](https://github.com/spechurkin/clubs/releases)

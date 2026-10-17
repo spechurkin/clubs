@@ -75,6 +75,12 @@ async function chooseJSON(): Promise<unknown | null> {
 }
 
 const browserAPI: DesktopAPI = {
+  getUpdateState: async () => ({ status: 'disabled', currentVersion: '', intervalDays: 1 }),
+  checkForUpdates: async () => ({ status: 'disabled', currentVersion: '', intervalDays: 1 }),
+  setUpdateInterval: async () => {},
+  installUpdate: async () => {},
+  openReleases: async () => {},
+  onUpdateState: () => () => {},
   getLanguage: async () => {
     const locale = localStorage.getItem('clubs-language');
     return isLocale(locale) ? locale : 'en';

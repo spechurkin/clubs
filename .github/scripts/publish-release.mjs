@@ -35,7 +35,7 @@ export async function publishRelease({
       tag_name: tag,
       target_commitish: context.sha,
       name: `Clubs ${version}`,
-      body: 'Windows: setup or portable EXE. macOS: choose x64 (Intel) or arm64 (Apple Silicon). Linux: AppImage or DEB. SHA256SUMS contains SHA-256 checksums for every package.\n\nBuilds are unsigned; macOS builds are not notarized.',
+      body: 'Windows: setup or portable EXE. macOS: choose x64 (Intel) or arm64 (Apple Silicon). Linux: AppImage or DEB. Windows Setup and Linux AppImage download future updates automatically; install them from Settings when ready to restart. Portable, DEB and unsigned macOS builds update manually. Install an update-enabled release once to receive future updates. SHA256SUMS contains SHA-256 checksums for every release file.\n\nBuilds are unsigned; macOS builds are not notarized.',
       draft: true,
       prerelease,
       generate_release_notes: true,
@@ -88,7 +88,7 @@ export async function publishRelease({
   await core.summary
     .addHeading(`Clubs ${version}`)
     .addLink('Download release', published.html_url)
-    .addRaw(`\n\nPublished ${names.length - 1} packages and SHA256SUMS.\n`)
+    .addRaw(`\n\nPublished ${names.length - 1} release files and SHA256SUMS.\n`)
     .write();
   return published;
 }
