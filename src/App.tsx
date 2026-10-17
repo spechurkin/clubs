@@ -79,6 +79,7 @@ import { useLibrary } from './useLibrary';
 import { sortByName, sortConnections } from './sorting';
 
 import { UpdateSettings, useUpdates } from './Updates';
+import { ThemeSettings } from './themes/ThemeSettings';
 
 type View = 'clubs' | 'characters' | 'relations' | 'settings';
 type Editor = {
@@ -1420,6 +1421,7 @@ export default function App() {
         {view === 'settings' && (
           <section className="settings-page">
             <UpdateSettings state={updateState} flush={library.flush} />
+            <ThemeSettings />
             <div className="settings-card compact">
               <h2>{tr('settings.language')}</h2>
               <label className="field">

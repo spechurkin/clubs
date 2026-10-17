@@ -63,6 +63,9 @@ automatically, so you can stay with the story. Back up your library whenever you
 The interface is available in **English and Russian**, with instant switching in Settings. Your characters and notes
 stay as you wrote them.
 
+Choose an interface theme in Settings, or add your own CSS theme to the `themes` folder beside the application.
+Use **Open themes folder** and **Reload themes** to manage it. See the [theme file guide](docs/themes.md).
+
 Windows **Setup** and Linux **AppImage** releases check for updates once a day by default and download them in
 the background. In Settings, choose checks every **day**, **week** or **month (30 days)**. The schedule survives app
 restarts. When an update is ready, open **Settings → Application updates** and choose **Save and restart to update**.

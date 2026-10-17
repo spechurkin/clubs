@@ -9,6 +9,7 @@ import {
 import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import packageMetadata from '../../package.json' with { type: 'json' };
+import { userThemeKey } from '../../shared/themes';
 
 const root = process.cwd();
 let app: ElectronApplication;
@@ -21,6 +22,7 @@ async function launch(directory: string) {
     ),
   ) as Record<string, string>;
   env.CLUB_DATA_DIR = directory;
+  env.CLUB_THEMES_DIR = path.join(directory, 'themes');
   app = await electron.launch({
     executablePath: process.env.CLUB_TEST_EXECUTABLE,
     args: process.env.CLUB_TEST_EXECUTABLE ? [] : [root],
@@ -68,6 +70,12 @@ test('English default, live language switching, native dialog text and shared li
 
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByLabel('Interface language', { exact: true })).toHaveValue('en');
+  const themeOptions = () => page.locator('.settings-card select option[value^="user:"]');
+  const themeNames = await themeOptions().allTextContents();
+  expect(themeNames).toEqual(['Trace']);
+  await page
+    .getByLabel('Interface theme', { exact: true })
+    .selectOption(userThemeKey({ id: 'trace' }));
   await app.evaluate(({ dialog }) => {
     dialog.showSaveDialog = async (...args: unknown[]) => {
       Object.assign(globalThis, { capturedSaveDialog: args.at(-1) });
@@ -85,6 +93,8 @@ test('English default, live language switching, native dialog text and shared li
   });
   await page.getByLabel('Interface language', { exact: true }).selectOption('ru');
   await expect(page.getByLabel(russianText('settings.language'), { exact: true })).toBeEnabled();
+  expect(await themeOptions().allTextContents()).toEqual(themeNames);
+  await expect(page.locator('html')).toHaveAttribute('data-theme-id', 'trace');
   await expect(page).toHaveTitle(russianText('app.name'));
   await expect(page.locator('.save-status')).toHaveText(russianText('save.saved'));
   expect(await app.evaluate(({ app }) => app.getName())).toBe(russianText('app.name'));
@@ -114,6 +124,10 @@ test('English default, live language switching, native dialog text and shared li
   );
   await page.getByLabel(russianText('settings.language'), { exact: true }).selectOption('en');
   await expect(page.getByLabel('Interface language', { exact: true })).toBeEnabled();
+  expect(await themeOptions().allTextContents()).toEqual(themeNames);
+  await expect(page.getByLabel('Interface theme', { exact: true })).toHaveValue(
+    userThemeKey({ id: 'trace' }),
+  );
   await expect(page).toHaveTitle('Clubs');
   await expect(page.locator('.save-status')).toHaveText('All changes saved');
   expect(JSON.parse(await readFile(path.join(directory, 'library.json'), 'utf8'))).toEqual(

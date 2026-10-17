@@ -1,0 +1,7 @@
+{
+  "format": "clubs/theme",
+  "api_version": 1,
+  "name": "Trace",
+  "mode": "light",
+  "stylesheet": "style.css"
+}
